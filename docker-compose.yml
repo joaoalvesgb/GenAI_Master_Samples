@@ -68,6 +68,44 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  # ===========================================
+  # Frontend - Chat SSE Demo (Nginx)
+  # ===========================================
+  chat-ui:
+    image: nginx:alpine
+    container_name: genai-chat-ui
+    restart: unless-stopped
+
+    ports:
+      - "${CHAT_UI_PORT:-8080}:80"
+
+    volumes:
+      - ./static:/usr/share/nginx/html:ro
+      - ./static/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+    depends_on:
+      api:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    networks:
+      - genai-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
 # ===========================================
 # Volumes persistentes
 # ===========================================

@@ -21,6 +21,7 @@
 - [🎮 Demo Interativo](#-demo-interativo)
 - [📚 Conceitos Importantes](#-conceitos-importantes)
 - [🛠️ Criando Seus Próprios Componentes](#️-criando-seus-próprios-componentes)
+- [🐳 Docker](#-docker)
 - [🔑 Configuração](#-configuração)
 - [📖 Exemplos de Uso](#-exemplos-de-uso)
 - [🤝 Contribuindo](#-contribuindo)
@@ -146,6 +147,7 @@ make app          # Apenas Streamlit (porta 8501)
 | 🎮 **Demo Chat** | http://localhost:8000/demo |
 | 📚 **API Docs** | http://localhost:8000/docs |
 | 🎨 **Streamlit** | http://localhost:8501 |
+| 🐳 **Chat UI (Docker)** | http://localhost:8080 |
 
 ---
 
@@ -159,6 +161,8 @@ GenAI_Master_Samples/
 ├── 📄 Makefile                  # Comandos úteis
 ├── 📄 pyproject.toml            # Configuração Poetry
 ├── 📄 requirements.txt          # Dependências pip
+├── 📄 Dockerfile                # Build da API
+├── 📄 docker-compose.yml        # Orquestração dos serviços
 ├── 📄 .env                      # Variáveis de ambiente
 │
 ├── 📁 agents/                   # 🤖 AGENTES DE IA
@@ -190,7 +194,8 @@ GenAI_Master_Samples/
 │   └── memory.py                # Sistema de memória
 │
 ├── 📁 static/                   # 🎨 ARQUIVOS ESTÁTICOS
-│   └── chat_sse_demo.html       # Demo interativo
+│   ├── chat_sse_demo.html       # Demo interativo
+│   └── nginx.conf               # Config Nginx (Docker)
 │
 └── 📁 logs/                     # 📋 LOGS
     └── .gitkeep
@@ -510,6 +515,88 @@ agent_registry.register(
 
 ---
 
+## 🐳 Docker
+
+O projeto inclui suporte completo a Docker com **docker-compose** para subir a API e o Chat UI de forma isolada.
+
+### Serviços
+
+| Serviço | Descrição | Porta Padrão | Imagem |
+|---------|-----------|:------------:|--------|
+| `api` | API FastAPI com os Agentes | `8000` | Build local (`Dockerfile`) |
+| `chat-ui` | Chat SSE Demo (Nginx) | `8080` | `nginx:alpine` |
+
+### Quick Start com Docker
+
+```bash
+# 1. Configure as variáveis de ambiente
+cp .env.example .env
+nano .env   # Adicione suas API keys
+
+# 2. Suba tudo
+docker-compose up -d --build
+
+# 3. Acompanhe os logs
+docker-compose logs -f
+```
+
+### URLs dos Serviços
+
+| Interface | URL |
+|-----------|-----|
+| 🎮 **Chat UI** | http://localhost:8080 |
+| 📚 **API Docs** | http://localhost:8000/docs |
+| ❤️ **Health Check** | http://localhost:8000/health |
+
+### Personalização de Portas
+
+As portas podem ser alteradas via variáveis de ambiente no `.env`:
+
+```env
+API_PORT=8000         # Porta da API FastAPI
+CHAT_UI_PORT=8080     # Porta do Chat UI (Nginx)
+```
+
+### Comandos Úteis
+
+```bash
+# Subir em background
+docker-compose up -d --build
+
+# Ver logs em tempo real
+docker-compose logs -f
+
+# Ver logs de um serviço específico
+docker-compose logs -f api
+docker-compose logs -f chat-ui
+
+# Parar e remover
+docker-compose down
+
+# Rebuild após alterações
+docker-compose up -d --build --force-recreate
+```
+
+### Arquitetura Docker
+
+```
+┌──────────────────────────────────────────────────┐
+│                 docker-compose                   │
+│                                                  │
+│  ┌──────────────┐       ┌──────────────────┐     │
+│  │   chat-ui    │       │      api         │     │
+│  │  (nginx)     │──────▶│   (FastAPI)      │     │
+│  │  :8080       │       │   :8000          │     │
+│  └──────────────┘       └──────────────────┘     │
+│                                                  │
+│              genai-network (bridge)              │
+└──────────────────────────────────────────────────┘
+```
+
+> 💡 O serviço `chat-ui` só inicia após a API passar no health check, garantindo que o backend esteja pronto.
+
+---
+
 ## 🔑 Configuração
 
 ### Variáveis de Ambiente
@@ -525,6 +612,7 @@ ALPHA_VANTAGE_API_KEY=sua-chave  # Para ações/forex
 # === API Config (opcionais) ===
 API_PORT=8000
 API_HOST=0.0.0.0
+CHAT_UI_PORT=8080
 API_AUTH_REQUIRED=false
 API_AUTH_KEY=sua-chave-secreta
 ```
@@ -625,6 +713,11 @@ make clean            # Limpa arquivos temporários
 make check-env        # Verifica variáveis de ambiente
 make info             # Informações do projeto
 make help             # Lista todos os comandos
+
+# Docker
+docker-compose up -d --build    # Sobe API + Chat UI
+docker-compose down             # Para e remove tudo
+docker-compose logs -f          # Logs em tempo real
 ```
 
 ---
