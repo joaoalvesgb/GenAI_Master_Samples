@@ -1,0 +1,47 @@
+# ============================================
+# Ingress - Ponto de entrada externo
+# ============================================
+# Requer um Ingress Controller instalado no cluster
+# (nginx-ingress, traefik, etc.)
+# ============================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: genai-ingress
+  namespace: genai
+  labels:
+    app.kubernetes.io/part-of: genai-master-samples
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # Descomente para TLS automático com cert-manager
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  # Descomente para habilitar TLS
+  # tls:
+  #   - hosts:
+  #       - genai.example.com
+  #     secretName: genai-tls
+  rules:
+    - host: genai.example.com  # Altere para seu domínio
+      http:
+        paths:
+          # Chat UI
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: genai-chat-ui
+                port:
+                  name: http
+          # API
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: genai-api
+                port:
+                  name: http
+

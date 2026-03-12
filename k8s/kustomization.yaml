@@ -1,0 +1,28 @@
+# ============================================
+# Kustomization - Gerenciamento de manifests
+# ============================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: genai
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: genai-master-samples
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - secrets.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - api-hpa.yaml
+  - chat-ui-configmap.yaml
+  - chat-ui-deployment.yaml
+  - chat-ui-service.yaml
+  - networkpolicy.yaml
+  # Descomente para habilitar Ingress
+  # - ingress.yaml
+

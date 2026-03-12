@@ -5,7 +5,7 @@
 # Use: make help para ver todos os comandos disponíveis
 # ============================================
 
-.PHONY: help install dev api app clean test lint format docker-build docker-run docker-stop logs
+.PHONY: help install dev api app clean test lint format docker-build docker-run docker-stop logs k8s-deploy k8s-dry-run k8s-delete k8s-status k8s-build k8s-forward
 
 # Cores para output
 BLUE := \033[0;34m
@@ -313,6 +313,28 @@ info: ## Mostra informações do projeto
 	@echo "  • make stop   - Para todos os serviços"
 	@echo "  • make status - Verifica status dos serviços"
 	@echo ""
+
+# ============================================
+# KUBERNETES
+# ============================================
+
+k8s-deploy: ## Deploy no Kubernetes
+	@./k8s/deploy.sh
+
+k8s-dry-run: ## Mostra o que seria aplicado no K8s sem executar
+	@./k8s/deploy.sh --dry-run
+
+k8s-delete: ## Remove todos os recursos do K8s
+	@./k8s/deploy.sh --delete
+
+k8s-status: ## Verifica status do deploy no K8s
+	@./k8s/deploy.sh --status
+
+k8s-build: ## Build da imagem Docker + deploy no K8s
+	@./k8s/deploy.sh --build
+
+k8s-forward: ## Abre port-forward local (API:8000, UI:8080)
+	@./k8s/deploy.sh --port-forward
 
 # ============================================
 # ATALHOS

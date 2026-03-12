@@ -1,0 +1,22 @@
+# ============================================
+# API - Service
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: genai-api
+  namespace: genai
+  labels:
+    app: genai-api
+    app.kubernetes.io/name: genai-api
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  type: ClusterIP
+  selector:
+    app: genai-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+

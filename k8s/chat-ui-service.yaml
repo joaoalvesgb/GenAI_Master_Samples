@@ -1,0 +1,22 @@
+# ============================================
+# Chat UI - Service
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: genai-chat-ui
+  namespace: genai
+  labels:
+    app: genai-chat-ui
+    app.kubernetes.io/name: genai-chat-ui
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  type: ClusterIP
+  selector:
+    app: genai-chat-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+

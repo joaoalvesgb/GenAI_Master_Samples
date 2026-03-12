@@ -1,0 +1,78 @@
+# ============================================
+# Network Policies - Segurança de rede
+# ============================================
+
+# Política: Chat UI só pode falar com a API
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: genai-chat-ui-netpol
+  namespace: genai
+  labels:
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  podSelector:
+    matchLabels:
+      app: genai-chat-ui
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: genai-api
+      ports:
+        - port: 8000
+          protocol: TCP
+    # Permite DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+# Política: API aceita tráfego apenas do Chat UI e do Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: genai-api-netpol
+  namespace: genai
+  labels:
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  podSelector:
+    matchLabels:
+      app: genai-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: genai-chat-ui
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    # Permite saída para APIs externas (OpenAI, Google, etc.)
+    - to: []
+      ports:
+        - port: 443
+          protocol: TCP
+        - port: 80
+          protocol: TCP
+    # Permite DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+

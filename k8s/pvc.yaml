@@ -1,0 +1,40 @@
+# ============================================
+# Persistent Volume Claims
+# ============================================
+
+# Data - Persistência de dados da aplicação
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: genai-data-pvc
+  namespace: genai
+  labels:
+    app: genai-api
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: standard  # Descomente e ajuste conforme seu cluster
+
+# Logs - Persistência de logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: genai-logs-pvc
+  namespace: genai
+  labels:
+    app: genai-api
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  # storageClassName: standard  # Descomente e ajuste conforme seu cluster
+

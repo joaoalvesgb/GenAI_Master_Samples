@@ -1,0 +1,16 @@
+# ============================================
+# ConfigMap - Configurações não-sensíveis
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: genai-config
+  namespace: genai
+  labels:
+    app.kubernetes.io/part-of: genai-master-samples
+data:
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_AUTH_REQUIRED: "false"
+  LOG_LEVEL: "info"
+

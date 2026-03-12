@@ -1,0 +1,117 @@
+# ============================================
+# API - Deployment (FastAPI + Agentes)
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genai-api
+  namespace: genai
+  labels:
+    app: genai-api
+    app.kubernetes.io/name: genai-api
+    app.kubernetes.io/part-of: genai-master-samples
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: genai-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: genai-api
+        app.kubernetes.io/name: genai-api
+    spec:
+      serviceAccountName: genai-api-sa
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: api
+          image: genai-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: genai-config
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: genai-secrets
+                  key: OPENAI_API_KEY
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: genai-secrets
+                  key: GOOGLE_API_KEY
+            - name: ALPHA_VANTAGE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: genai-secrets
+                  key: ALPHA_VANTAGE_API_KEY
+                  optional: true
+            - name: TAVILY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: genai-secrets
+                  key: TAVILY_API_KEY
+                  optional: true
+            - name: API_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: genai-secrets
+                  key: API_AUTH_KEY
+                  optional: true
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: genai-data-pvc
+        - name: logs
+          persistentVolumeClaim:
+            claimName: genai-logs-pvc
+

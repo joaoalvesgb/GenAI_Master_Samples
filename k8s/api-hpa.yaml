@@ -1,0 +1,32 @@
+# ============================================
+# API - Horizontal Pod Autoscaler
+# ============================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: genai-api-hpa
+  namespace: genai
+  labels:
+    app: genai-api
+    app.kubernetes.io/part-of: genai-master-samples
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: genai-api
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
