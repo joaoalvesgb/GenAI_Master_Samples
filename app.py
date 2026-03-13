@@ -98,7 +98,7 @@ AVAILABLE_AGENTS = {
         "description": "Agente usando Azure OpenAI com tools (compliance empresarial)",
         "api_key_env": "AZURE_OPENAI_API_KEY",
         "api_key_url": "https://portal.azure.com",
-        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
+        "models": ["inic1537_gpt-4o_dev", "gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
         "extra_params": ["presence_penalty", "frequency_penalty"],
         "is_azure": True
     },
