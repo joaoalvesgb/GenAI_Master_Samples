@@ -5,7 +5,7 @@ APP.PY - Aplicação Principal Streamlit
 
 Este é o ponto de entrada da aplicação.
 
-Streamlit é um framework que permite criar interfaces web
+Streamlit é um framework que permite criar interfaces webs
 interativas usando apenas Python, sem precisar de HTML/CSS/JS.
 
 Como usar:
@@ -81,7 +81,7 @@ AVAILABLE_AGENTS = {
         "api_key_env": "OPENAI_API_KEY",
         "api_key_url": "https://platform.openai.com/api-keys",
         "models": ["gpt-4", "gpt-4o"],
-        # Parâmetros específicos do OpenAI
+        # Parâmetros específicos da OpenAI
         "extra_params": ["presence_penalty", "frequency_penalty"]
     },
     "🛠️ Tools (Gemini)": {
@@ -459,7 +459,7 @@ def initialize_session_state():
     """
     Inicializa o estado da sessão do Streamlit.
 
-    session_state é como uma "memória" que persiste entre
+    Session_state é como uma "memória" que persiste entre
     as interações do usuário. Sem ela, cada clique
     recarregaria toda a página e perderia os dados.
     """
@@ -539,7 +539,7 @@ def create_new_chat():
     # Sincroniza com variáveis de compatibilidade
     st.session_state.messages = []
     st.session_state.agent = None  # Será recriado
-    # Mantém o agente e modelo selecionados (não reseta para None)
+    # Mantém o agente e modelo selecionados (não reset para None)
     # st.session_state.current_agent_name permanece o mesmo
     # st.session_state.current_model permanece o mesmo
     return new_id
@@ -791,7 +791,7 @@ def display_sidebar():
                        """
             )
 
-            # Parâmetros específicos do OpenAI
+            # Parâmetros específicos da OpenAI
             if selected_agent == "OpenAI":
                 st.markdown("---")
                 st.markdown("##### Parâmetros OpenAI")
@@ -997,7 +997,7 @@ def display_sidebar():
             st.session_state.last_selected_agent = selected_agent
 
         if st.session_state.last_selected_agent != selected_agent:
-            # Agente mudou, carrega o template do novo agente
+            # O agente mudou, carrega o modelo do novo agente
             st.session_state[template_key] = {
                 "welcome": agent_template["welcome"],
                 "system_prompt": agent_template["system_prompt"],
@@ -1213,7 +1213,7 @@ def display_sidebar():
             # Botão para processar documentos
             if st.button("📥 Processar Documentos", use_container_width=True):
                 if uploaded_files:
-                    with st.spinner("Processando documentos..."):
+                    with st.spinner("Processando documentos..."):  # type: ignore[arg-type]
                         try:
                             all_documents = []
 
@@ -1278,7 +1278,7 @@ def display_sidebar():
             if st.button("📂 Carregar do Disco", use_container_width=True):
                 if load_path:
                     try:
-                        with st.spinner("Carregando base de conhecimento..."):
+                        with st.spinner("Carregando base de conhecimento..."):  # type: ignore[arg-type]
                             vector_manager = VectorStoreManager()
                             vector_manager.load(load_path)
 
@@ -1432,7 +1432,7 @@ def main():
     )
 
     if need_new_agent:
-        with st.spinner("🔄 Inicializando agente..."):
+        with st.spinner("🔄 Inicializando agente..."):  # type: ignore[arg-type]
             agent = create_agent(
                 agent_name=config["agent_name"],
                 model=config["model"],
@@ -1517,7 +1517,7 @@ def main():
 
         # Processa e exibe resposta do agente
         with st.chat_message("assistant"):
-            with st.spinner("🤔 Pensando..."):
+            with st.spinner("🤔 Pensando..."):  # type: ignore[arg-type]
                 response = agent.process_message(prompt)
                 st.markdown(response)
 

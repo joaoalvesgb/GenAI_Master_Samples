@@ -16,41 +16,86 @@ CARACTERÍSTICAS:
 - CORS configurável
 
 ENDPOINTS PRINCIPAIS:
-- GET  /agents                  - Lista todos os agentes disponíveis
-- POST /agents/{agent}/chat     - Envia mensagem para um agente
-- GET  /agents/{agent}/info     - Informações detalhadas do agente
-- GET  /sessions                - Lista sessões ativas
+- GET /agents - Lista todos os agentes disponíveis
+- POST /agents/{agent}/chat - Envia mensagem para um agente
+- GET /agents/{agent}/info - Informações detalhadas do agente
+- GET /sessions - Lista sessões ativas
 - DELETE /sessions/{session_id} - Encerra uma sessão
 
 COMO EXECUTAR:
     uvicorn api:app --reload --port 8000
 
 DOCUMENTAÇÃO:
-    http://localhost:8000/docs      (Swagger UI)
-    http://localhost:8000/redoc     (ReDoc)
+    http://localhost:8000/docs (Swagger UI)
+    http://localhost:8000/redoc (ReDoc)
 
 Autor: Curso Master GenAI
 Data: 2026
 =============================================================================
 """
 
+import asyncio
+import json
 import os
 import uuid
-import json
-import asyncio
+import logging
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional, Dict, Any, List, AsyncGenerator
-from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, Header, Query, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Depends, Header, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, HTMLResponse
+from pydantic import BaseModel, Field
 
 # Carrega variáveis de ambiente
 load_dotenv()
+
+# =============================================================================
+# IMPORTS DE AGENTES (module-level com fallback gracioso)
+# =============================================================================
+
+logger = logging.getLogger(__name__)
+
+try:
+    from agents import OpenAIAgent, GeminiAgent, AzureAgent, SimpleAgent
+except ImportError:
+    OpenAIAgent = GeminiAgent = AzureAgent = SimpleAgent = None
+    logger.warning("Erro ao importar agentes base", exc_info=True)
+
+try:
+    from agents import FinanceAgent
+except ImportError:
+    FinanceAgent = None
+    logger.warning("Erro ao importar FinanceAgent", exc_info=True)
+
+try:
+    from agents import KnowledgeAgent
+except ImportError:
+    KnowledgeAgent = None
+    logger.warning("Erro ao importar KnowledgeAgent", exc_info=True)
+
+try:
+    from agents import WebSearchAgent
+except ImportError:
+    WebSearchAgent = None
+    logger.warning("Erro ao importar WebSearchAgent", exc_info=True)
+
+try:
+    from agents import OllamaAgent
+except ImportError:
+    OllamaAgent = None
+    logger.warning("Erro ao importar OllamaAgent", exc_info=True)
+
+try:
+    from agents import MCPAgent, MCPAgentDemo
+    from agents.mcp_agent import MCP_AVAILABLE, MCP_SERVERS
+except ImportError:
+    MCPAgent = MCPAgentDemo = None
+    MCP_AVAILABLE = False
+    MCP_SERVERS = {}
+    logger.warning("Erro ao importar MCP agents", exc_info=True)
 
 
 # =============================================================================
@@ -74,13 +119,11 @@ class AgentRegistry:
         """
         Descobre automaticamente os agentes disponíveis.
 
-        Esta função importa os agentes do módulo agents e registra
-        aqueles que estão disponíveis para uso via API.
+        Usa os imports do nível do módulo (com fallback gracioso)
+        e registra apenas os agentes cujas dependências estão disponíveis.
         """
         # Agentes base
-        try:
-            from agents import OpenAIAgent, GeminiAgent, AzureAgent, SimpleAgent
-
+        if OpenAIAgent is not None:
             self._agents["openai"] = {
                 "class": OpenAIAgent,
                 "name": "OpenAI Agent",
@@ -93,6 +136,7 @@ class AgentRegistry:
                 "has_rag": True
             }
 
+        if GeminiAgent is not None:
             self._agents["gemini"] = {
                 "class": GeminiAgent,
                 "name": "Gemini Agent",
@@ -105,6 +149,7 @@ class AgentRegistry:
                 "has_rag": True
             }
 
+        if SimpleAgent is not None:
             self._agents["simple-openai"] = {
                 "class": SimpleAgent,
                 "name": "Simple Agent (OpenAI)",
@@ -131,6 +176,7 @@ class AgentRegistry:
                 "extra_params": {"provider": "google"}
             }
 
+        if AzureAgent is not None:
             self._agents["azure"] = {
                 "class": AzureAgent,
                 "name": "Azure OpenAI Agent",
@@ -142,13 +188,9 @@ class AgentRegistry:
                 "has_tools": True,
                 "has_rag": True
             }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar agentes base: {e}")
 
         # Agentes especialistas
-        try:
-            from agents import FinanceAgent
-
+        if FinanceAgent is not None:
             self._agents["finance-openai"] = {
                 "class": FinanceAgent,
                 "name": "Finance Agent (OpenAI)",
@@ -176,12 +218,8 @@ class AgentRegistry:
                 "specialization": "finance",
                 "extra_params": {"provider": "google"}
             }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar FinanceAgent: {e}")
 
-        try:
-            from agents import KnowledgeAgent
-
+        if KnowledgeAgent is not None:
             self._agents["knowledge-openai"] = {
                 "class": KnowledgeAgent,
                 "name": "Knowledge Agent (OpenAI)",
@@ -209,12 +247,8 @@ class AgentRegistry:
                 "specialization": "knowledge",
                 "extra_params": {"provider": "google"}
             }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar KnowledgeAgent: {e}")
 
-        try:
-            from agents import WebSearchAgent
-
+        if WebSearchAgent is not None:
             self._agents["websearch-openai"] = {
                 "class": WebSearchAgent,
                 "name": "Web Search Agent (OpenAI)",
@@ -242,19 +276,15 @@ class AgentRegistry:
                 "specialization": "websearch",
                 "extra_params": {"provider": "google"}
             }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar WebSearchAgent: {e}")
 
         # Ollama Agent (Local - sem API key)
-        try:
-            from agents import OllamaAgent
-
+        if OllamaAgent is not None:
             self._agents["ollama"] = {
                 "class": OllamaAgent,
                 "name": "Ollama Agent (Local)",
                 "description": "Agente local via Ollama - não precisa de API key! Suporta Llama, Mistral, etc.",
                 "provider": "ollama",
-                "requires_api_key": None,  # Ollama não precisa de API key!
+                "requires_api_key": None,
                 "models": ["llama3.2", "llama3.1", "mistral", "codellama", "phi3", "gemma2", "gemma3", "qwen2.5"],
                 "default_model": "llama3.2",
                 "has_tools": True,
@@ -262,15 +292,9 @@ class AgentRegistry:
                 "is_local": True,
                 "base_url": "http://localhost:11434"
             }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar OllamaAgent: {e}")
 
         # MCP Agents
-        try:
-            from agents import MCPAgent, MCPAgentDemo
-            from agents.mcp_agent import MCP_AVAILABLE, MCP_SERVERS
-
-            # Demo sempre disponível
+        if MCPAgentDemo is not None:
             self._agents["mcp-demo"] = {
                 "class": MCPAgentDemo,
                 "name": "MCP Demo Agent",
@@ -285,27 +309,23 @@ class AgentRegistry:
                 "extra_params": {"provider": "openai", "mcp_server_name": "fetch"}
             }
 
-            # MCP Real (se disponível)
-            if MCP_AVAILABLE and MCPAgent is not None:
-                for server_name, server_info in MCP_SERVERS.items():
-                    # Só adiciona se não precisa de API key
-                    if not server_info.get("env_required"):
-                        self._agents[f"mcp-{server_name}"] = {
-                            "class": MCPAgent,
-                            "name": f"MCP {server_info['name']} Agent",
-                            "description": f"MCP Real: {server_info['description']}",
-                            "provider": "openai",
-                            "requires_api_key": "OPENAI_API_KEY",
-                            "models": ["gpt-4o-mini", "gpt-4o", "gpt-4"],
-                            "default_model": "gpt-4o-mini",
-                            "has_tools": True,
-                            "has_rag": False,
-                            "specialization": "mcp",
-                            "mcp_server": server_name,
-                            "extra_params": {"provider": "openai", "mcp_server_name": server_name}
-                        }
-        except ImportError as e:
-            print(f"⚠️ Erro ao importar MCP agents: {e}")
+        if MCP_AVAILABLE and MCPAgent is not None:
+            for server_name, server_info in MCP_SERVERS.items():
+                if not server_info.get("env_required"):
+                    self._agents[f"mcp-{server_name}"] = {
+                        "class": MCPAgent,
+                        "name": f"MCP {server_info['name']} Agent",
+                        "description": f"MCP Real: {server_info['description']}",
+                        "provider": "openai",
+                        "requires_api_key": "OPENAI_API_KEY",
+                        "models": ["gpt-4o-mini", "gpt-4o", "gpt-4"],
+                        "default_model": "gpt-4o-mini",
+                        "has_tools": True,
+                        "has_rag": False,
+                        "specialization": "mcp",
+                        "mcp_server": server_name,
+                        "extra_params": {"provider": "openai", "mcp_server_name": server_name}
+                    }
 
     def list_agents(self) -> List[Dict[str, Any]]:
         """Lista todos os agentes disponíveis."""
@@ -335,12 +355,12 @@ class AgentRegistry:
         return self._agents.get(agent_id)
 
     def create_agent_instance(
-        self,
-        agent_id: str,
-        model: Optional[str] = None,
-        temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
-        **kwargs
+            self,
+            agent_id: str,
+            model: Optional[str] = None,
+            temperature: float = 0.7,
+            system_prompt: Optional[str] = None,
+            **kwargs
     ):
         """
         Cria uma instância de um agente.
@@ -361,7 +381,7 @@ class AgentRegistry:
 
         agent_class = config["class"]
 
-        # Parâmetros base
+        # Parâmetros-base
         params = {
             "model": model or config.get("default_model"),
             "temperature": temperature,
@@ -522,7 +542,7 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Ke
 
     expected_key = os.getenv("API_AUTH_KEY")
     if not expected_key:
-        # Se auth é requerido mas não há chave configurada, permite acesso
+        # Se auth é requerido, mas não há chave configurada, permite acesso
         return True
 
     if not x_api_key or x_api_key != expected_key:
@@ -673,8 +693,8 @@ async def health_check():
     summary="Lista todos os agentes disponíveis"
 )
 async def list_agents(
-    available_only: bool = Query(False, description="Mostrar apenas agentes com API key configurada"),
-    _: bool = Depends(verify_api_key)
+        available_only: bool = Query(False, description="Mostrar apenas agentes com API key configurada"),
+        _: bool = Depends(verify_api_key)
 ):
     """
     Retorna a lista de todos os agentes disponíveis.
@@ -701,8 +721,8 @@ async def list_agents(
     summary="Informações de um agente específico"
 )
 async def get_agent_info(
-    agent_id: str,
-    _: bool = Depends(verify_api_key)
+        agent_id: str,
+        _: bool = Depends(verify_api_key)
 ):
     """Retorna informações detalhadas de um agente específico."""
     agents = agent_registry.list_agents()
@@ -723,8 +743,8 @@ async def get_agent_info(
     summary="Cria uma nova sessão de chat"
 )
 async def create_session(
-    session_data: SessionCreate,
-    _: bool = Depends(verify_api_key)
+        session_data: SessionCreate,
+        _: bool = Depends(verify_api_key)
 ):
     """
     Cria uma nova sessão de chat com um agente.
@@ -822,9 +842,9 @@ async def delete_session(session_id: str, _: bool = Depends(verify_api_key)):
     summary="Envia mensagem para uma sessão existente"
 )
 async def chat_with_session(
-    session_id: str,
-    chat_message: ChatMessage,
-    _: bool = Depends(verify_api_key)
+        session_id: str,
+        chat_message: ChatMessage,
+        _: bool = Depends(verify_api_key)
 ):
     """
     Envia uma mensagem para um agente em uma sessão existente.
@@ -871,11 +891,11 @@ async def chat_with_session(
     summary="Chat rápido sem sessão"
 )
 async def quick_chat(
-    agent_id: str,
-    chat_message: ChatMessage,
-    model: Optional[str] = Query(None, description="Modelo a usar"),
-    temperature: float = Query(0.7, ge=0.0, le=2.0),
-    _: bool = Depends(verify_api_key)
+        agent_id: str,
+        chat_message: ChatMessage,
+        model: Optional[str] = Query(None, description="Modelo a usar"),
+        temperature: float = Query(0.7, ge=0.0, le=2.0),
+        _: bool = Depends(verify_api_key)
 ):
     """
     Envia uma mensagem rápida para um agente sem criar sessão.
@@ -929,10 +949,10 @@ class StreamingChatMessage(BaseModel):
 
 
 async def create_streaming_response(
-    agent,
-    message: str,
-    session_id: str,
-    agent_id: str
+        agent,
+        message: str,
+        session_id: str,
+        agent_id: str
 ) -> AsyncGenerator[str, None]:
     """
     Gera respostas em streaming usando SSE.
@@ -1026,9 +1046,9 @@ async def create_streaming_response(
     response_class=StreamingResponse
 )
 async def chat_stream_session(
-    session_id: str,
-    chat_message: StreamingChatMessage,
-    _: bool = Depends(verify_api_key)
+        session_id: str,
+        chat_message: StreamingChatMessage,
+        _: bool = Depends(verify_api_key)
 ):
     """
     Envia mensagem com resposta em streaming via SSE.
@@ -1093,11 +1113,11 @@ async def chat_stream_session(
     response_class=StreamingResponse
 )
 async def quick_chat_stream(
-    agent_id: str,
-    chat_message: StreamingChatMessage,
-    model: Optional[str] = Query(None, description="Modelo a usar"),
-    temperature: float = Query(0.7, ge=0.0, le=2.0),
-    _: bool = Depends(verify_api_key)
+        agent_id: str,
+        chat_message: StreamingChatMessage,
+        model: Optional[str] = Query(None, description="Modelo a usar"),
+        temperature: float = Query(0.7, ge=0.0, le=2.0),
+        _: bool = Depends(verify_api_key)
 ):
     """
     Chat rápido com streaming sem criar sessão.
@@ -1158,11 +1178,12 @@ async def test_stream():
 
     Envia 10 mensagens de teste com intervalo de 500ms.
     """
+
     async def generate_test():
         yield f"data: {json.dumps({'type': 'start', 'message': 'Iniciando teste de streaming...'})}\n\n"
 
         for i in range(10):
-            yield f"data: {json.dumps({'type': 'token', 'content': f'Token {i+1} ', 'index': i+1})}\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'content': f'Token {i + 1} ', 'index': i + 1})}\n\n"
             await asyncio.sleep(0.5)
 
         yield f"data: {json.dumps({'type': 'end', 'message': 'Teste concluído!'})}\n\n"
@@ -1241,4 +1262,3 @@ if __name__ == "__main__":
         port=port,
         reload=True
     )
-
