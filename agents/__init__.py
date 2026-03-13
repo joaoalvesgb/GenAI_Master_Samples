@@ -15,6 +15,7 @@ Agentes disponíveis:
 - SimpleAgent: Agente simples de chat (sem tools/RAG)
 - OpenAIAgent: Agente com GPT-4 e tools
 - GeminiAgent: Agente com Google Gemini e tools
+- AzureAgent: Agente com Azure OpenAI e tools
 - OllamaAgent: Agente com modelos locais via Ollama (sem API key!)
 - FinanceAgent: Agente especialista em finanças
 - KnowledgeAgent: Agente especialista em conhecimento (Wikipedia)
@@ -64,6 +65,7 @@ Exemplo de uso:
 from .base_agent import BaseAgent
 from .openai_agent import OpenAIAgent
 from .gemini_agent import GeminiAgent
+from .azure_agent import AzureAgent
 from .ollama_agent import OllamaAgent
 from .simple_agent import SimpleAgent
 from .finance_agent import FinanceAgent
@@ -89,6 +91,7 @@ __all__ = [
     "BaseAgent",
     "OpenAIAgent",
     "GeminiAgent",
+    "AzureAgent",
     "OllamaAgent",
     "SimpleAgent",
     "FinanceAgent",

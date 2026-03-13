@@ -79,7 +79,7 @@ class AgentRegistry:
         """
         # Agentes base
         try:
-            from agents import OpenAIAgent, GeminiAgent, SimpleAgent
+            from agents import OpenAIAgent, GeminiAgent, AzureAgent, SimpleAgent
 
             self._agents["openai"] = {
                 "class": OpenAIAgent,
@@ -129,6 +129,18 @@ class AgentRegistry:
                 "has_tools": False,
                 "has_rag": False,
                 "extra_params": {"provider": "google"}
+            }
+
+            self._agents["azure"] = {
+                "class": AzureAgent,
+                "name": "Azure OpenAI Agent",
+                "description": "Agente com Azure OpenAI e ferramentas (compliance empresarial, SLA)",
+                "provider": "azure",
+                "requires_api_key": "AZURE_OPENAI_API_KEY",
+                "models": ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
+                "default_model": "gpt-4o",
+                "has_tools": True,
+                "has_rag": True
             }
         except ImportError as e:
             print(f"⚠️ Erro ao importar agentes base: {e}")

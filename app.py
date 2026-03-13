@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 import os
 
 # Importa os agentes disponíveis
-from agents import OpenAIAgent, GeminiAgent, OllamaAgent, SimpleAgent, FinanceAgent, KnowledgeAgent, WebSearchAgent, MCPAgentDemo, MEMORY_TYPES
+from agents import OpenAIAgent, GeminiAgent, AzureAgent, OllamaAgent, SimpleAgent, FinanceAgent, KnowledgeAgent, WebSearchAgent, MCPAgentDemo, MEMORY_TYPES
 
 # Tenta importar MCPAgent real (requer dependências extras)
 try:
@@ -92,6 +92,15 @@ AVAILABLE_AGENTS = {
         "models": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-3-flash-preview"],
         # Parâmetros específicos do Gemini
         "extra_params": ["top_k"]
+    },
+    "☁️ Tools (Azure OpenAI)": {
+        "class": AzureAgent,
+        "description": "Agente usando Azure OpenAI com tools (compliance empresarial)",
+        "api_key_env": "AZURE_OPENAI_API_KEY",
+        "api_key_url": "https://portal.azure.com",
+        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
+        "extra_params": ["presence_penalty", "frequency_penalty"],
+        "is_azure": True
     },
     "🦙 Ollama (Local)": {
         "class": OllamaAgent,
@@ -418,6 +427,12 @@ def create_agent(
         # Adiciona parâmetros específicos do Gemini
         if "Gemini" in agent_name or "Finance (Gemini)" in agent_name:
             common_params["top_k"] = top_k
+
+        # Adiciona parâmetros específicos do Azure OpenAI
+        if "Azure" in agent_name:
+            common_params["presence_penalty"] = presence_penalty
+            common_params["frequency_penalty"] = frequency_penalty
+            common_params["vector_store_manager"] = vector_store_manager
 
         # Adiciona parâmetros específicos do Ollama
         if "Ollama" in agent_name:
@@ -830,6 +845,41 @@ def display_sidebar():
                            """
                 )
 
+            # Parâmetros específicos do Azure OpenAI
+            if "Azure" in selected_agent:
+                st.markdown("---")
+                st.markdown("##### Parâmetros Azure OpenAI")
+
+                presence_penalty = st.slider(
+                    "Presence Penalty",
+                    min_value=-2.0,
+                    max_value=2.0,
+                    value=0.0,
+                    step=0.1,
+                    key="azure_presence_penalty",
+                    help="""
+                           Penaliza tokens que já apareceram no texto.
+                           - Valores positivos = Incentiva novos tópicos
+                           - Valores negativos = Permite repetição de tópicos
+                           - 0.0 = Sem efeito
+                           """
+                )
+
+                frequency_penalty = st.slider(
+                    "Frequency Penalty",
+                    min_value=-2.0,
+                    max_value=2.0,
+                    value=0.0,
+                    step=0.1,
+                    key="azure_frequency_penalty",
+                    help="""
+                           Penaliza tokens baseado na frequência de uso.
+                           - Valores positivos = Evita repetir palavras
+                           - Valores negativos = Permite mais repetição
+                           - 0.0 = Sem efeito
+                           """
+                )
+
             # Parâmetros específicos do Ollama
             if "Ollama" in selected_agent:
                 st.markdown("---")
@@ -886,6 +936,38 @@ def display_sidebar():
                     # Força recriar o agente
                     if "agent" in st.session_state:
                         st.session_state.agent = None
+
+                # Configurações adicionais do Azure OpenAI
+                is_azure_agent = agent_config.get("is_azure", False)
+                if is_azure_agent:
+                    st.markdown("---")
+                    st.markdown("##### Configuração Azure OpenAI")
+
+                    azure_endpoint = st.text_input(
+                        "AZURE_OPENAI_ENDPOINT",
+                        value=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+                        help="URL do recurso Azure OpenAI (ex: https://meu-recurso.openai.azure.com/)",
+                        placeholder="https://meu-recurso.openai.azure.com/"
+                    )
+                    if azure_endpoint and azure_endpoint != os.getenv("AZURE_OPENAI_ENDPOINT", ""):
+                        os.environ["AZURE_OPENAI_ENDPOINT"] = azure_endpoint
+                        if "agent" in st.session_state:
+                            st.session_state.agent = None
+
+                    azure_api_version = st.text_input(
+                        "AZURE_OPENAI_API_VERSION",
+                        value=os.getenv("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"),
+                        help="Versão da API do Azure OpenAI"
+                    )
+                    if azure_api_version and azure_api_version != os.getenv("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"):
+                        os.environ["AZURE_OPENAI_API_VERSION"] = azure_api_version
+                        if "agent" in st.session_state:
+                            st.session_state.agent = None
+
+                    st.info(
+                        "💡 Configure o **deployment name** como modelo na lista acima. "
+                        "O nome do deployment deve corresponder ao modelo implantado no Azure Portal."
+                    )
 
                 # Link para obter API key
                 st.markdown(f'<a href="{agent_config["api_key_url"]}" target="_blank"><i class="fa-solid fa-key"></i> Obter API Key</a>', unsafe_allow_html=True)
