@@ -351,8 +351,9 @@ class VectorStoreManager:
         Cria o vector store a partir de documentos.
 
         Este é o processo de INDEXAÇÃO:
-        1. Cada documento é convertido em embedding
-        2. Os embeddings são armazenados no FAISS
+        1. Valida e sanitiza cada documento
+        2. Cada documento é convertido em embedding
+        3. Os embeddings são armazenados no FAISS
 
         Args:
             documents: Lista de documentos a indexar
@@ -364,12 +365,42 @@ class VectorStoreManager:
         try:
             from langchain_community.vectorstores import FAISS
 
-            print(f"📊 Indexando {len(documents)} documentos...")
+            # Sanitiza documentos: garante que page_content é sempre uma string válida
+            sanitized = []
+            skipped = 0
+            for doc in documents:
+                content = doc.page_content
+
+                # Converte para string se não for
+                if not isinstance(content, str):
+                    content = str(content) if content is not None else ""
+
+                # Remove caracteres nulos que podem causar problemas
+                content = content.replace("\x00", "")
+
+                # Ignora documentos vazios
+                if not content.strip():
+                    skipped += 1
+                    continue
+
+                doc.page_content = content
+                sanitized.append(doc)
+
+            if skipped > 0:
+                print(f"⚠️ {skipped} documento(s) vazios foram ignorados")
+
+            if not sanitized:
+                raise ValueError(
+                    "❌ Nenhum documento com conteúdo válido para indexar.\n"
+                    "Verifique se os arquivos contêm texto extraível."
+                )
+
+            print(f"📊 Indexando {len(sanitized)} documentos...")
 
             # Cria o vector store
             # Isso pode demorar dependendo da quantidade de documentos
             self.vector_store = FAISS.from_documents(
-                documents=documents,
+                documents=sanitized,
                 embedding=self.embeddings
             )
 

@@ -212,10 +212,15 @@ def load_csv_file(file_path: str = None, file_content: bytes = None,
 
     # Opção 1: Cada linha vira um documento
     for idx, row in df.iterrows():
-        # Formata a linha como texto legível
-        content = "\n".join([f"{col}: {val}" for col, val in row.items()])
+        # Formata a linha como texto legível (trata NaN/None)
+        content = "\n".join([
+            f"{col}: {val}" for col, val in row.items()
+            if pd.notna(val) and str(val).strip()
+        ])
+        if not content.strip():
+            continue  # Ignora linhas completamente vazias/NaN
         doc = Document(
-            page_content=content,
+            page_content=str(content),
             metadata={
                 "source": file_path or filename,
                 "filename": filename,
@@ -312,13 +317,19 @@ def load_json_file(file_path: str = None, file_content: bytes = None,
         if isinstance(item, dict):
             if text_field and text_field in item:
                 return str(item[text_field])
-            return "\n".join([f"{k}: {v}" for k, v in item.items()])
-        return str(item)
+            return "\n".join([
+                f"{k}: {v}" for k, v in item.items()
+                if v is not None and str(v).strip()
+            ])
+        return str(item) if item is not None else ""
 
     if isinstance(data, list):
         for idx, item in enumerate(data):
+            text = item_to_text(item)
+            if not text.strip():
+                continue  # Ignora itens vazios
             doc = Document(
-                page_content=item_to_text(item),
+                page_content=str(text),
                 metadata={
                     "source": file_path or filename,
                     "filename": filename,
