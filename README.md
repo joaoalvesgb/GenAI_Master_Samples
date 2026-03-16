@@ -85,6 +85,77 @@ git clone https://github.com/seu-usuario/GenAI_Master_Samples.git
 cd GenAI_Master_Samples
 ```
 
+### 🐍 Criando um Ambiente Virtual (.venv)
+
+É altamente recomendado usar um **ambiente virtual** para isolar as dependências do projeto:
+
+```bash
+# Crie o ambiente virtual na raiz do projeto:
+python3 -m venv .venv
+
+# Ative o ambiente virtual:
+
+# macOS / Linux:
+source .venv/bin/activate
+
+# Windows (CMD):
+.venv\Scripts\activate.bat
+
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+```
+
+Após ativar, você verá `(.venv)` no início do terminal:
+
+```bash
+(.venv) ➜ GenAI_Master_Samples $
+```
+
+> 💡 **Dicas**:
+> - Sempre ative o `.venv` antes de instalar dependências ou executar o projeto.
+> - Para desativar o ambiente virtual, basta digitar: `deactivate`
+> - O diretório `.venv/` já está incluído no `.gitignore` — não será versionado.
+
+#### Configurando o Poetry para usar o .venv do projeto
+
+Se estiver usando o **Poetry**, configure-o para criar o ambiente virtual dentro do próprio projeto:
+
+```bash
+poetry config virtualenvs.in-project true
+```
+
+Assim, ao rodar `poetry install`, ele usará automaticamente o `.venv/` na raiz do projeto.
+
+### 📦 Instalando o Poetry (Recomendado)
+
+O projeto utiliza o **Poetry** para gerenciar dependências. Caso ainda não tenha instalado:
+
+```bash
+# macOS / Linux (método oficial):
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Windows (PowerShell):
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+
+# Ou via pipx (alternativa):
+pipx install poetry
+
+# Ou via Homebrew (macOS):
+brew install poetry
+```
+
+Após a instalação, verifique:
+
+```bash
+poetry --version
+```
+
+> 💡 **Dica**: Caso o comando `poetry` não seja encontrado, adicione ao PATH:
+> ```bash
+> # macOS / Linux — adicione ao ~/.zshrc ou ~/.bashrc:
+> export PATH="$HOME/.local/bin:$PATH"
+> ```
+
 ### 2️⃣ Instale as dependências
 
 ```bash
@@ -128,6 +199,32 @@ ollama serve
 ```
 
 > 💡 **Vantagens do Ollama**: Gratuito, privado (dados não saem do PC), funciona offline!
+
+### 🔨 Instalando o Make (Opcional - para usar o Makefile)
+
+O projeto inclui um **Makefile** com comandos úteis. Para utilizá-lo, instale o `make`:
+
+```bash
+# macOS (já vem instalado com Xcode Command Line Tools):
+xcode-select --install
+
+# Ou via Homebrew:
+brew install make
+
+# Linux (Debian/Ubuntu):
+sudo apt update && sudo apt install make
+
+# Linux (Fedora/RHEL):
+sudo dnf install make
+
+# Windows (via Chocolatey):
+choco install make
+
+# Windows (via Scoop):
+scoop install make
+```
+
+> 💡 **Dica**: No macOS, o `make` geralmente já está disponível. Teste com `make --version` no terminal.
 
 ### 4️⃣ Execute!
 
