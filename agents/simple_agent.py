@@ -18,8 +18,6 @@ Características:
 - System prompt configurável
 - Parâmetros do modelo ajustáveis (temperatura, top_p, etc.)
 
-Autor: Curso Master GenAI
-Data: 2026
 =============================================================================
 """
 

@@ -24,8 +24,6 @@ IMPORTANTE:
 - Não requer API key (DuckDuckGo é gratuito)
 - Resultados podem variar conforme disponibilidade
 
-Autor: Curso Master GenAI
-Data: 2026
 =============================================================================
 """
 
@@ -41,6 +39,7 @@ from core.memory import ShortTermMemory, LongTermMemory, CombinedMemory
 
 # Importa a tool de web search
 from tools import web_search_tool
+from tools import rag_search_tool, set_vector_store
 
 
 class WebSearchAgent(BaseAgent):
@@ -100,6 +99,8 @@ class WebSearchAgent(BaseAgent):
         api_key: Optional[str] = None,
         # System Prompt customizado
         system_prompt: Optional[str] = None,
+        # RAG - Base de Conhecimento
+        vector_store_manager=None,
         # Parâmetros de memória
         memory_type: str = "short_term",
         memory_max_messages: int = 20,
@@ -161,6 +162,10 @@ class WebSearchAgent(BaseAgent):
 
         # Configurar Tool (apenas web_search)
         self.tools = list(self.SEARCH_TOOLS)
+
+        # Configurar RAG se fornecido
+        self.vector_store_manager = vector_store_manager
+        self._setup_rag()
 
         # System Prompt especializado
         self.system_prompt = system_prompt or self._get_search_system_prompt()
@@ -339,6 +344,26 @@ class WebSearchAgent(BaseAgent):
             tools=self.tools,
         )
 
+    def _setup_rag(self):
+        """Configura o RAG se o vector store estiver disponível."""
+        if self.vector_store_manager is not None:
+            set_vector_store(self.vector_store_manager)
+            if rag_search_tool not in self.tools:
+                self.tools.append(rag_search_tool)
+
+    def set_vector_store(self, manager):
+        """
+        Define o vector store manager para RAG.
+
+        Args:
+            manager: Instância de VectorStoreManager
+        """
+        self.vector_store_manager = manager
+        self._setup_rag()
+        if "knowledge_base_search" not in self.system_prompt:
+            self.system_prompt = self._get_search_system_prompt()
+        self._create_agent()
+
     def _extract_text_from_content(self, content) -> str:
         """Extrai texto do conteúdo da resposta."""
         if isinstance(content, str):
@@ -479,8 +504,8 @@ class WebSearchAgent(BaseAgent):
         return [tool.name for tool in self.tools]
 
     def has_rag(self) -> bool:
-        """Retorna False (este agente não usa RAG)."""
-        return False
+        """Retorna True se o RAG está habilitado."""
+        return self.vector_store_manager is not None
 
     def get_model_info(self) -> Dict[str, Any]:
         """Retorna informações sobre o modelo."""

@@ -28,8 +28,6 @@ SERVIDORES MCP DISPONÍVEIS:
 - brave-search: Busca na web (requer BRAVE_API_KEY)
 - github: Acesso a repositórios (requer GITHUB_TOKEN)
 
-Autor: Curso Master GenAI
-Data: 2026
 =============================================================================
 """
 
