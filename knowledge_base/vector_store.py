@@ -26,6 +26,15 @@ Provedores de Embeddings suportados:
 - Ollama: nomic-embed-text, mxbai-embed-large (local e gratuito)
 - HuggingFace: sentence-transformers (local e gratuito, fallback)
 
+Configuração via variáveis de ambiente (.env):
+- EMBEDDING_PROVIDER: Provedor a usar (openai, azure, gemini, ollama, huggingface)
+- EMBEDDING_MODEL: Modelo específico do provedor escolhido
+
+Prioridade de configuração:
+1. Parâmetro no código (provider=, model=)
+2. Variável de ambiente (EMBEDDING_PROVIDER, EMBEDDING_MODEL)
+3. Detecção automática (pelas API keys configuradas)
+
 =============================================================================
 """
 
@@ -69,21 +78,35 @@ class VectorStoreManager:
         """
         Inicializa o gerenciador.
 
+        A configuração de embeddings segue a seguinte prioridade:
+        1. Parâmetro direto (embeddings, provider, model)
+        2. Variáveis de ambiente (EMBEDDING_PROVIDER, EMBEDDING_MODEL)
+        3. Detecção automática (pelas API keys configuradas)
+
         Args:
             embeddings: Modelo de embeddings a usar (instância pronta).
                        Se None, detecta automaticamente pelo provider ou variáveis de ambiente.
             provider: Provedor de embeddings a usar.
                      Opções: "openai", "azure", "gemini", "ollama", "huggingface".
-                     Se None, detecta automaticamente pelas variáveis de ambiente.
+                     Se None, tenta EMBEDDING_PROVIDER do .env, depois detecta automaticamente.
             model: Nome/ID do modelo de embeddings.
-                  Se None, usa o padrão de cada provedor.
+                  Se None, tenta EMBEDDING_MODEL do .env, depois usa o padrão de cada provedor.
+
+        Variáveis de ambiente suportadas:
+            EMBEDDING_PROVIDER: Provedor de embeddings (ex: "ollama", "openai", "gemini")
+            EMBEDDING_MODEL: Modelo de embeddings (ex: "nomic-embed-text", "text-embedding-3-small")
 
         Examples:
             >>> # Detecção automática (usa variáveis de ambiente)
             >>> manager = VectorStoreManager()
 
-            >>> # Provedor explícito
+            >>> # Provedor explícito via código
             >>> manager = VectorStoreManager(provider="ollama", model="nomic-embed-text")
+
+            >>> # Via .env (sem parâmetros no código):
+            >>> # EMBEDDING_PROVIDER=gemini
+            >>> # EMBEDDING_MODEL=models/text-embedding-004
+            >>> manager = VectorStoreManager()
 
             >>> # Instância pronta
             >>> from langchain_openai import OpenAIEmbeddings
@@ -105,25 +128,38 @@ class VectorStoreManager:
         """
         Inicializa o modelo de embeddings.
 
-        Se um provider for informado, usa diretamente.
-        Caso contrário, detecta automaticamente pelas variáveis de ambiente,
-        na seguinte ordem de prioridade:
-        1. OpenAI (OPENAI_API_KEY)
-        2. Azure OpenAI (AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
-        3. Google Gemini (GOOGLE_API_KEY)
-        4. Ollama (sempre disponível localmente)
-        5. HuggingFace / sentence-transformers (fallback local)
+        Prioridade de configuração:
+        1. Parâmetros diretos (provider, model) — passados no código
+        2. Variáveis de ambiente (EMBEDDING_PROVIDER, EMBEDDING_MODEL)
+        3. Detecção automática pelas API keys configuradas:
+           a. OpenAI (OPENAI_API_KEY)
+           b. Azure OpenAI (AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
+           c. Google Gemini (GOOGLE_API_KEY)
+           d. Ollama (sempre disponível localmente)
+           e. HuggingFace / sentence-transformers (fallback local)
 
         Args:
             provider: Provedor explícito (opcional)
             model: Modelo específico (opcional)
         """
-        # Se um provider foi informado explicitamente, usa ele
-        if provider:
-            provider = provider.lower().strip()
-            if provider not in SUPPORTED_PROVIDERS:
+        # Prioridade: parâmetro > variável de ambiente
+        resolved_provider = provider or os.getenv("EMBEDDING_PROVIDER")
+        resolved_model = model or os.getenv("EMBEDDING_MODEL")
+
+        # Log das variáveis de ambiente detectadas (útil para debug)
+        env_provider = os.getenv("EMBEDDING_PROVIDER")
+        env_model = os.getenv("EMBEDDING_MODEL")
+        if env_provider or env_model:
+            print(f"🔧 Variáveis de ambiente detectadas: "
+                  f"EMBEDDING_PROVIDER={env_provider or '(não definido)'}, "
+                  f"EMBEDDING_MODEL={env_model or '(não definido)'}")
+
+        # Se um provider foi definido (via parâmetro ou env var), usa ele
+        if resolved_provider:
+            resolved_provider = resolved_provider.lower().strip()
+            if resolved_provider not in SUPPORTED_PROVIDERS:
                 raise ValueError(
-                    f"Provedor '{provider}' não suportado. "
+                    f"Provedor '{resolved_provider}' não suportado. "
                     f"Opções: {', '.join(SUPPORTED_PROVIDERS)}"
                 )
             initializer = {
@@ -133,14 +169,14 @@ class VectorStoreManager:
                 "ollama": self._init_ollama_embeddings,
                 "huggingface": self._init_huggingface_embeddings,
             }
-            initializer[provider](model=model)
+            initializer[resolved_provider](model=resolved_model)
             return
 
-        # Detecção automática por variáveis de ambiente
+        # Detecção automática por variáveis de ambiente (API keys)
         # 1. OpenAI
         if os.getenv("OPENAI_API_KEY"):
             try:
-                self._init_openai_embeddings(model=model)
+                self._init_openai_embeddings(model=resolved_model)
                 return
             except (ImportError, Exception) as e:
                 print(f"⚠️ OpenAI Embeddings indisponível: {e}")
@@ -148,7 +184,7 @@ class VectorStoreManager:
         # 2. Azure OpenAI
         if os.getenv("AZURE_OPENAI_API_KEY") and os.getenv("AZURE_OPENAI_ENDPOINT"):
             try:
-                self._init_azure_embeddings(model=model)
+                self._init_azure_embeddings(model=resolved_model)
                 return
             except (ImportError, Exception) as e:
                 print(f"⚠️ Azure OpenAI Embeddings indisponível: {e}")
@@ -156,14 +192,14 @@ class VectorStoreManager:
         # 3. Google Gemini
         if os.getenv("GOOGLE_API_KEY"):
             try:
-                self._init_gemini_embeddings(model=model)
+                self._init_gemini_embeddings(model=resolved_model)
                 return
             except (ImportError, Exception) as e:
                 print(f"⚠️ Gemini Embeddings indisponível: {e}")
 
         # 4. Ollama (local, sem API key)
         try:
-            self._init_ollama_embeddings(model=model)
+            self._init_ollama_embeddings(model=resolved_model)
             return
         except (ImportError, Exception) as e:
             print(f"⚠️ Ollama Embeddings indisponível: {e}")
@@ -178,6 +214,7 @@ class VectorStoreManager:
         raise ValueError(
             "Nenhum modelo de embeddings disponível.\n"
             "Opções:\n"
+            "  - Configure no .env: EMBEDDING_PROVIDER=openai e EMBEDDING_MODEL=text-embedding-3-small\n"
             "  - Defina OPENAI_API_KEY para usar OpenAI\n"
             "  - Defina AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT para usar Azure\n"
             "  - Defina GOOGLE_API_KEY para usar Gemini\n"
