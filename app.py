@@ -391,6 +391,17 @@ def create_agent(
         if guardrails.strip():
             full_system_prompt += f"\n\n{guardrails.strip()}"
 
+        # Se RAG está habilitado, adiciona instruções ao system prompt
+        if vector_store_manager is not None and "knowledge_base_search" not in full_system_prompt:
+            rag_instructions = (
+                "\n\n📚 BASE DE CONHECIMENTO DISPONÍVEL:\n"
+                "- Você tem acesso à ferramenta knowledge_base_search para buscar informações "
+                "nos documentos carregados pelo usuário.\n"
+                "- Use esta ferramenta quando o usuário perguntar sobre conteúdo específico dos documentos.\n"
+                "- Sempre cite a fonte quando usar informações da base de conhecimento."
+            )
+            full_system_prompt += rag_instructions
+
         # Parâmetros comuns a todos os agentes
         common_params = {
             "name": agent_name,
@@ -412,11 +423,14 @@ def create_agent(
         is_specialist = agent_config.get("is_specialist", False)
 
         if has_provider:
-            # Agentes com provider (SimpleAgent, FinanceAgent)
+            # Agentes com provider (SimpleAgent, FinanceAgent, etc.)
             common_params["provider"] = agent_config["provider"]
 
-        if not has_provider and not is_specialist:
-            # Agentes genéricos com tools (OpenAI, Gemini) usam vector_store_manager
+        # Passa vector_store_manager a todos os agentes que suportam RAG
+        # SimpleAgent não usa tools, MCP usa protocolo próprio
+        agent_class_name = agent_class.__name__
+        supports_rag = agent_class_name not in ("SimpleAgent", "MCPAgent", "MCPAgentDemo")
+        if supports_rag:
             common_params["vector_store_manager"] = vector_store_manager
 
         # Adiciona parâmetros específicos do OpenAI
@@ -432,15 +446,12 @@ def create_agent(
         if "Azure" in agent_name:
             common_params["presence_penalty"] = presence_penalty
             common_params["frequency_penalty"] = frequency_penalty
-            common_params["vector_store_manager"] = vector_store_manager
 
         # Adiciona parâmetros específicos do Ollama
         if "Ollama" in agent_name:
             # Ollama não usa max_tokens, usa num_predict
             common_params["num_predict"] = max_tokens
             del common_params["max_tokens"]
-            # Adiciona vector_store_manager para RAG
-            common_params["vector_store_manager"] = vector_store_manager
 
         # Adiciona parâmetros específicos do MCP
         if "mcp_server" in agent_config:
@@ -507,6 +518,13 @@ def initialize_session_state():
     # Configuração atual do chat (para persistir entre reloads)
     if "current_model" not in st.session_state:
         st.session_state.current_model = None
+
+    # Rastreia system_prompt e guardrails atuais (para detectar mudanças)
+    if "current_system_prompt" not in st.session_state:
+        st.session_state.current_system_prompt = None
+
+    if "current_guardrails" not in st.session_state:
+        st.session_state.current_guardrails = None
 
     if "current_config" not in st.session_state:
         st.session_state.current_config = None
@@ -1166,25 +1184,22 @@ def display_sidebar():
             )
 
             # Configurações de chunking
-            col1, col2 = st.columns(2)
-            with col1:
-                chunk_size = st.number_input(
-                    "Tamanho do Chunk",
-                    min_value=100,
-                    max_value=4000,
-                    value=1000,
-                    step=100,
-                    help="Tamanho de cada pedaço de texto"
-                )
-            with col2:
-                chunk_overlap = st.number_input(
-                    "Overlap",
-                    min_value=0,
-                    max_value=500,
-                    value=200,
-                    step=50,
-                    help="Sobreposição entre chunks"
-                )
+            chunk_size = st.number_input(
+                "Tamanho do Chunk",
+                min_value=100,
+                max_value=4000,
+                value=1000,
+                step=100,
+                help="Tamanho de cada pedaço de texto"
+            )
+            chunk_overlap = st.number_input(
+                "Overlap",
+                min_value=0,
+                max_value=500,
+                value=200,
+                step=50,
+                help="Sobreposição entre chunks"
+            )
 
             # Opção de persistência
             st.markdown("---")
@@ -1425,10 +1440,14 @@ def main():
     # 1. Não existe agente ainda
     # 2. O tipo de agente mudou (ex: OpenAI -> Gemini)
     # 3. O modelo mudou (ex: gpt-4 -> gpt-4o)
+    # 4. O system prompt foi alterado
+    # 5. Os guardrails foram alterados
     need_new_agent = (
         st.session_state.agent is None or
         st.session_state.current_agent_name != config["agent_name"] or
-        st.session_state.current_model != config["model"]
+        st.session_state.current_model != config["model"] or
+        st.session_state.current_system_prompt != config["system_prompt"] or
+        st.session_state.current_guardrails != config["guardrails"]
     )
 
     if need_new_agent:
@@ -1454,7 +1473,9 @@ def main():
             if agent:
                 st.session_state.agent = agent
                 st.session_state.current_agent_name = config["agent_name"]
-                st.session_state.current_model = config["model"]  # Atualiza o modelo atual
+                st.session_state.current_model = config["model"]
+                st.session_state.current_system_prompt = config["system_prompt"]
+                st.session_state.current_guardrails = config["guardrails"]
                 # Salva a configuração no chat ativo
                 sync_active_chat(config)
                 st.toast(f"Agente {config['agent_name']} ({config['model']}) ativado!", icon="✅")

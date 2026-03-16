@@ -25,7 +25,7 @@ Formatos de arquivo suportados:
 =============================================================================
 """
 
-from .vector_store import VectorStoreManager, create_simple_knowledge_base
+from .vector_store import VectorStoreManager, create_simple_knowledge_base, SUPPORTED_PROVIDERS
 from .document_loader import (
     load_document,
     load_text_file,
@@ -43,6 +43,7 @@ __all__ = [
     # Vector Store
     "VectorStoreManager",
     "create_simple_knowledge_base",
+    "SUPPORTED_PROVIDERS",
     # Document Loaders
     "load_document",
     "load_text_file",

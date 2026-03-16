@@ -25,8 +25,6 @@ Ideal para:
 - Pesquisa de informações
 - Tutores virtuais
 
-Autor: Curso Master GenAI
-Data: 2026
 =============================================================================
 """
 
@@ -48,6 +46,7 @@ from tools import (
     wikipedia_summary_tool,
     wikipedia_search_tool
 )
+from tools import rag_search_tool, set_vector_store
 
 
 class KnowledgeAgent(BaseAgent):
@@ -113,6 +112,8 @@ class KnowledgeAgent(BaseAgent):
         system_prompt: Optional[str] = None,
         # Idioma padrão para Wikipedia
         default_language: str = "pt",
+        # RAG - Base de Conhecimento
+        vector_store_manager=None,
         # Parâmetros de memória
         memory_type: str = "short_term",
         memory_max_messages: int = 20,
@@ -173,6 +174,10 @@ class KnowledgeAgent(BaseAgent):
 
         # Configurar Tools
         self.tools = list(self.KNOWLEDGE_TOOLS)
+
+        # Configurar RAG se fornecido
+        self.vector_store_manager = vector_store_manager
+        self._setup_rag()
 
         # System Prompt especializado
         self.system_prompt = system_prompt or self._get_knowledge_system_prompt()
@@ -356,6 +361,26 @@ class KnowledgeAgent(BaseAgent):
             tools=self.tools,
         )
 
+    def _setup_rag(self):
+        """Configura o RAG se o vector store estiver disponível."""
+        if self.vector_store_manager is not None:
+            set_vector_store(self.vector_store_manager)
+            if rag_search_tool not in self.tools:
+                self.tools.append(rag_search_tool)
+
+    def set_vector_store(self, manager):
+        """
+        Define o vector store manager para RAG.
+
+        Args:
+            manager: Instância de VectorStoreManager
+        """
+        self.vector_store_manager = manager
+        self._setup_rag()
+        if "knowledge_base_search" not in self.system_prompt:
+            self.system_prompt = self._get_knowledge_system_prompt()
+        self._create_agent()
+
     def _extract_text_from_content(self, content) -> str:
         """Extrai texto do conteúdo da resposta."""
         if isinstance(content, str):
@@ -496,8 +521,8 @@ class KnowledgeAgent(BaseAgent):
         return [tool.name for tool in self.tools]
 
     def has_rag(self) -> bool:
-        """Retorna False (este agente não usa RAG local)."""
-        return False
+        """Retorna True se o RAG está habilitado."""
+        return self.vector_store_manager is not None
 
     def get_model_info(self) -> Dict[str, Any]:
         """Retorna informações sobre o modelo."""

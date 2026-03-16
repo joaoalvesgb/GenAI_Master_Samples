@@ -28,8 +28,6 @@ SERVIDORES MCP DISPONÍVEIS:
 - brave-search: Busca na web (requer BRAVE_API_KEY)
 - github: Acesso a repositórios (requer GITHUB_TOKEN)
 
-Autor: Curso Master GenAI
-Data: 2026
 =============================================================================
 """
 
@@ -608,6 +606,7 @@ class MCPAgentDemo(BaseAgent):
         model: Optional[str] = None,
         temperature: float = 0.7,
         mcp_server_name: str = "fetch",
+        system_prompt: Optional[str] = None,
         **kwargs
     ):
         super().__init__(name, description)
@@ -638,7 +637,8 @@ class MCPAgentDemo(BaseAgent):
                 google_api_key=self.api_key
             )
 
-        self.system_prompt = self._get_demo_system_prompt()
+        # System prompt: usa o customizado se fornecido, senão o padrão demo
+        self.system_prompt = system_prompt or self._get_demo_system_prompt()
 
     def _get_demo_system_prompt(self) -> str:
         """System prompt para o modo demo."""

@@ -12,6 +12,7 @@
 ## 📋 Índice
 
 - [🎯 Sobre o Projeto](#-sobre-o-projeto)
+- [🗺️ Trilha de Aprendizado](#️-trilha-de-aprendizado)
 - [✨ Features](#-features)
 - [🚀 Quick Start](#-quick-start)
 - [📁 Estrutura do Projeto](#-estrutura-do-projeto)
@@ -43,6 +44,155 @@ Este projeto foi desenvolvido para ensinar os conceitos fundamentais de **Agente
 
 ---
 
+## 🗺️ Trilha de Aprendizado
+
+Siga esta trilha para aprender **do zero ao avançado** sobre Agentes de IA com este projeto.
+Cada etapa constrói sobre a anterior — ao final, você terá domínio completo!
+
+### 🟢 Nível 1 — Fundamentos (Primeiros Passos)
+
+> _"Entender o básico: conversar com um LLM e configurar o ambiente."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 1.1 | Instalar o projeto e configurar o `.env` | `README.md`, `.env.example` | Setup do ambiente |
+| 1.2 | Subir o Streamlit e conversar com o **Simple Agent** | `app.py`, `agents/simple_agent.py` | Chat básico com LLM |
+| 1.3 | Ler e entender a **classe base abstrata** | `agents/base_agent.py` | Herança, ABC, Template Pattern |
+| 1.4 | Trocar entre **OpenAI ↔ Gemini** na sidebar | `agents/simple_agent.py` | Multi-provider, API keys |
+| 1.5 | Explorar os **templates de prompts** | `templates/prompts.py` | System Prompt, Guardrails |
+
+**✅ Ao final:** Você sabe conversar com um LLM, trocar de provedor e personalizar o comportamento do agente.
+
+---
+
+### 🟡 Nível 2 — Tools (Ferramentas)
+
+> _"Dar superpoderes ao agente: cálculos, buscas, APIs externas."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 2.1 | Usar o **OpenAI Agent** e perguntar "Quanto é 15% de 230?" | `agents/openai_agent.py` | ReAct Pattern, Tool Calling |
+| 2.2 | Estudar como uma **tool é criada** | `tools/calculator.py` | `@tool` decorator, Pydantic schema |
+| 2.3 | Testar a **busca web** perguntando sobre notícias | `tools/web_search.py` | DuckDuckGo, busca gratuita |
+| 2.4 | Usar o **Gemini Agent** com as mesmas tools | `agents/gemini_agent.py` | Mesmo padrão, provider diferente |
+| 2.5 | Explorar **tools de finanças** (crypto, ações, câmbio) | `tools/crypto.py`, `tools/stocks.py` | APIs externas (CoinGecko, Alpha Vantage) |
+| 2.6 | Criar sua **própria tool** seguindo o padrão | `tools/` | Extensibilidade do sistema |
+
+**✅ Ao final:** Você sabe como Tools funcionam, como o agente decide usá-las (ReAct) e como criar as suas.
+
+---
+
+### 🟠 Nível 3 — RAG (Base de Conhecimento)
+
+> _"Dar conhecimento específico ao agente com seus próprios documentos."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 3.1 | Fazer upload de um **PDF** na sidebar do Streamlit | `app.py` (seção RAG) | Upload + processamento |
+| 3.2 | Entender como documentos são **divididos em chunks** | `knowledge_base/document_loader.py` | Chunking, overlap |
+| 3.3 | Estudar como **embeddings** transformam texto em vetores | `knowledge_base/vector_store.py` | Embeddings, FAISS |
+| 3.4 | Testar com **diferentes provedores de embeddings** | `.env` → `EMBEDDING_PROVIDER` | OpenAI, Gemini, Ollama, HuggingFace |
+| 3.5 | Perguntar sobre o conteúdo do documento ao agente | `tools/rag_tool.py` | Similarity search, contexto |
+| 3.6 | Salvar e **carregar a base do disco** | Sidebar → Armazenamento | Persistência de vector store |
+
+**✅ Ao final:** Você sabe fazer RAG completo — upload, chunking, embeddings, busca semântica e integração com o agente.
+
+---
+
+### 🔴 Nível 4 — Agentes Especialistas
+
+> _"Criar agentes focados em domínios específicos."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 4.1 | Usar o **Finance Agent** e consultar crypto/ações | `agents/finance_agent.py` | Agente de domínio |
+| 4.2 | Usar o **Knowledge Agent** para buscar na Wikipedia | `agents/knowledge_agent.py` | Tools especializadas |
+| 4.3 | Usar o **Web Search Agent** para pesquisas | `agents/websearch_agent.py` | Single-tool agent |
+| 4.4 | Comparar **system prompts** de cada especialista | `templates/prompts.py` | Prompt engineering por domínio |
+| 4.5 | Experimentar **RAG + Especialista** juntos | Sidebar → Upload + Agente | Combinação de capacidades |
+| 4.6 | Criar seu **próprio agente especialista** | Novo arquivo em `agents/` | Extensão do sistema |
+
+**✅ Ao final:** Você sabe criar agentes focados com tools, prompts e comportamentos especializados.
+
+---
+
+### 🟣 Nível 5 — Memória e Contexto
+
+> _"Fazer o agente lembrar de conversas e informações importantes."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 5.1 | Ativar **memória de curto prazo** e conversar | Sidebar → Memória | Últimas N mensagens |
+| 5.2 | Ativar **memória de longo prazo** e testar persistência | `core/memory.py` | Armazenamento em disco |
+| 5.3 | Usar **memória combinada** (curto + longo) | Sidebar → Combinada | Estratégia híbrida |
+| 5.4 | Reiniciar o app e verificar que memória **persiste** | Terminal → restart | Persistência entre sessões |
+| 5.5 | Estudar a implementação de cada tipo | `core/memory.py` | Classes de memória |
+
+**✅ Ao final:** Você sabe como funcionam os 3 tipos de memória e quando usar cada um.
+
+---
+
+### ⚫ Nível 6 — Infraestrutura (Local e Cloud)
+
+> _"Rodar modelos localmente, expor via API e containerizar."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 6.1 | Instalar **Ollama** e rodar modelos **100% locais** | `agents/ollama_agent.py` | Privacidade, sem API key |
+| 6.2 | Usar o **Azure OpenAI Agent** (compliance empresarial) | `agents/azure_agent.py` | SLA, rede privada |
+| 6.3 | Subir a **API REST** com FastAPI | `api.py` | Endpoints, sessões, streaming |
+| 6.4 | Testar com o **Demo interativo** SSE | `static/chat_sse_demo.html` | Server-Sent Events |
+| 6.5 | **Containerizar** com Docker Compose | `Dockerfile`, `docker-compose.yml` | API + Chat UI em containers |
+| 6.6 | Explorar a configuração **Kubernetes** | `k8s/` | Deploy em produção |
+
+**✅ Ao final:** Você sabe rodar local, expor via API, fazer streaming e deployar com Docker/K8s.
+
+---
+
+### 🌟 Nível 7 — MCP e Avançado
+
+> _"Conectar a servidores externos e dominar o ecossistema completo."_
+
+| Etapa | O que fazer | Arquivo(s) | Conceito |
+|:-----:|-------------|------------|----------|
+| 7.1 | Entender o **MCP Demo Agent** (sem conexão real) | `agents/mcp_agent.py` → `MCPAgentDemo` | Conceito do protocolo |
+| 7.2 | Usar **MCP real** com Fetch (buscar URLs) | `agents/mcp_agent.py` → `MCPAgent` | Conexão real a servidor MCP |
+| 7.3 | Experimentar **MCP Filesystem** (ler/escrever arquivos) | MCP Server: filesystem | Acesso a recursos locais |
+| 7.4 | Testar **MCP Time**, **SQLite** e outros | MCP Servers variados | Diversidade de tools externas |
+| 7.5 | Estudar o **registro dinâmico** de agentes na API | `api.py` → `AgentRegistry` | Descoberta automática |
+| 7.6 | Combinar **tudo**: agente + tools + RAG + memória + MCP | Projeto completo | Arquitetura completa |
+
+**✅ Ao final:** Você domina o ecossistema completo de Agentes de IA — do zero ao avançado! 🎓
+
+---
+
+### 📊 Mapa Visual da Trilha
+
+```
+🟢 Nível 1          🟡 Nível 2          🟠 Nível 3
+Fundamentos    →    Tools          →    RAG
+• Setup             • ReAct Pattern     • Embeddings
+• Simple Agent      • @tool decorator   • Vector Store
+• Providers         • APIs externas     • Chunking
+     │                   │                   │
+     ▼                   ▼                   ▼
+🔴 Nível 4          🟣 Nível 5          ⚫ Nível 6
+Especialistas  →    Memória        →    Infraestrutura
+• Finance Agent     • Curto prazo       • Ollama (local)
+• Knowledge Agent   • Longo prazo       • Azure OpenAI
+• Prompts           • Persistência      • API + Docker
+     │                   │                   │
+     └───────────────────┼───────────────────┘
+                         ▼
+                   🌟 Nível 7
+                   MCP & Avançado
+                   • Servidores externos
+                   • Arquitetura completa
+                   • 🎓 Master GenAI!
+```
+
+---
+
 ## ✨ Features
 
 ### 🖥️ Interfaces
@@ -54,9 +204,10 @@ Este projeto foi desenvolvido para ensinar os conceitos fundamentais de **Agente
 ### 🤖 Agentes
 - ✅ **OpenAI** - GPT-4, GPT-4o, GPT-4o-mini
 - ✅ **Google Gemini** - Gemini 2.5 Flash, 2.0 Flash, 1.5 Pro
-- ✅ **Ollama (Local)** - Llama 3.2, Mistral, CodeLlama, Phi-3, etc. **(sem API key!)**
+- ✅ **Azure OpenAI** - Mesmos modelos GPT com compliance empresarial e SLA
+- ✅ **Ollama (Local)** - Llama 3.2, Mistral, CodeLlama, Phi-3, Gemma, etc. **(sem API key!)**
 - ✅ **Especializados** - Finance, Knowledge, Web Search
-- ✅ **MCP** - Conexão com servidores externos
+- ✅ **MCP** - Fetch, Filesystem, Memory, Time, SQLite, Brave Search, GitHub
 
 ### 🔧 Tools
 - ✅ Calculadora, Data/Hora, Busca Web
@@ -84,6 +235,77 @@ Este projeto foi desenvolvido para ensinar os conceitos fundamentais de **Agente
 git clone https://github.com/seu-usuario/GenAI_Master_Samples.git
 cd GenAI_Master_Samples
 ```
+
+### 🐍 Criando um Ambiente Virtual (.venv)
+
+É altamente recomendado usar um **ambiente virtual** para isolar as dependências do projeto:
+
+```bash
+# Crie o ambiente virtual na raiz do projeto:
+python3 -m venv .venv
+
+# Ative o ambiente virtual:
+
+# macOS / Linux:
+source .venv/bin/activate
+
+# Windows (CMD):
+.venv\Scripts\activate.bat
+
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+```
+
+Após ativar, você verá `(.venv)` no início do terminal:
+
+```bash
+(.venv) ➜ GenAI_Master_Samples $
+```
+
+> 💡 **Dicas**:
+> - Sempre ative o `.venv` antes de instalar dependências ou executar o projeto.
+> - Para desativar o ambiente virtual, basta digitar: `deactivate`
+> - O diretório `.venv/` já está incluído no `.gitignore` — não será versionado.
+
+#### Configurando o Poetry para usar o .venv do projeto
+
+Se estiver usando o **Poetry**, configure-o para criar o ambiente virtual dentro do próprio projeto:
+
+```bash
+poetry config virtualenvs.in-project true
+```
+
+Assim, ao rodar `poetry install`, ele usará automaticamente o `.venv/` na raiz do projeto.
+
+### 📦 Instalando o Poetry (Recomendado)
+
+O projeto utiliza o **Poetry** para gerenciar dependências. Caso ainda não tenha instalado:
+
+```bash
+# macOS / Linux (método oficial):
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Windows (PowerShell):
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+
+# Ou via pipx (alternativa):
+pipx install poetry
+
+# Ou via Homebrew (macOS):
+brew install poetry
+```
+
+Após a instalação, verifique:
+
+```bash
+poetry --version
+```
+
+> 💡 **Dica**: Caso o comando `poetry` não seja encontrado, adicione ao PATH:
+> ```bash
+> # macOS / Linux — adicione ao ~/.zshrc ou ~/.bashrc:
+> export PATH="$HOME/.local/bin:$PATH"
+> ```
 
 ### 2️⃣ Instale as dependências
 
@@ -129,6 +351,32 @@ ollama serve
 
 > 💡 **Vantagens do Ollama**: Gratuito, privado (dados não saem do PC), funciona offline!
 
+### 🔨 Instalando o Make (Opcional - para usar o Makefile)
+
+O projeto inclui um **Makefile** com comandos úteis. Para utilizá-lo, instale o `make`:
+
+```bash
+# macOS (já vem instalado com Xcode Command Line Tools):
+xcode-select --install
+
+# Ou via Homebrew:
+brew install make
+
+# Linux (Debian/Ubuntu):
+sudo apt update && sudo apt install make
+
+# Linux (Fedora/RHEL):
+sudo dnf install make
+
+# Windows (via Chocolatey):
+choco install make
+
+# Windows (via Scoop):
+scoop install make
+```
+
+> 💡 **Dica**: No macOS, o `make` geralmente já está disponível. Teste com `make --version` no terminal.
+
 ### 4️⃣ Execute!
 
 ```bash
@@ -170,6 +418,7 @@ GenAI_Master_Samples/
 │   ├── simple_agent.py          # Agente simples (sem tools)
 │   ├── openai_agent.py          # Agente OpenAI completo
 │   ├── gemini_agent.py          # Agente Gemini completo
+│   ├── azure_agent.py           # ☁️ Agente Azure OpenAI
 │   ├── ollama_agent.py          # 🦙 Agente Ollama (local)
 │   ├── finance_agent.py         # 💰 Especialista em finanças
 │   ├── knowledge_agent.py       # 📚 Especialista em conhecimento
@@ -205,23 +454,46 @@ GenAI_Master_Samples/
 
 ## 🤖 Agentes Disponíveis
 
+### Agentes Base
+
+| ID | Nome | Provider | Especialização | Tools | RAG |
+|----|------|----------|----------------|:-----:|:---:|
+| `simple-openai` | Simple Agent | OpenAI | Geral (sem tools) | ❌ | ❌ |
+| `simple-gemini` | Simple Agent | Google | Geral (sem tools) | ❌ | ❌ |
+| `openai` | OpenAI Agent | OpenAI | Geral | ✅ | ✅ |
+| `gemini` | Gemini Agent | Google | Geral | ✅ | ✅ |
+| `azure` | Azure OpenAI Agent | Azure | Geral (compliance empresarial) | ✅ | ✅ |
+| `ollama` | **Ollama Agent** | **Local** | Geral **(sem API key!)** | ✅ | ✅ |
+
+### Agentes Especialistas
+
 | ID | Nome | Provider | Especialização | Tools |
-|----|------|----------|----------------|-------|
-| `simple-openai` | Simple Agent | OpenAI | Geral | ❌ |
-| `simple-gemini` | Simple Agent | Google | Geral | ❌ |
-| `openai` | OpenAI Agent | OpenAI | Geral | ✅ |
-| `gemini` | Gemini Agent | Google | Geral | ✅ |
-| `ollama` | **Ollama Agent** | **Local** | Geral | ✅ |
-| `finance-openai` | Finance Expert | OpenAI | 💰 Finanças | ✅ |
-| `finance-gemini` | Finance Expert | Google | 💰 Finanças | ✅ |
-| `knowledge-openai` | Knowledge Expert | OpenAI | 📚 Conhecimento | ✅ |
-| `knowledge-gemini` | Knowledge Expert | Google | 📚 Conhecimento | ✅ |
-| `websearch-openai` | Web Search Expert | OpenAI | 🔍 Pesquisa | ✅ |
-| `websearch-gemini` | Web Search Expert | Google | 🔍 Pesquisa | ✅ |
-| `mcp-fetch` | MCP Fetch | OpenAI | 🔌 URLs | MCP |
-| `mcp-time` | MCP Time | OpenAI | 🔌 Data/Hora | MCP |
+|----|------|----------|----------------|:-----:|
+| `finance-openai` | Finance Expert | OpenAI | 💰 Finanças (ações, crypto, câmbio) | ✅ |
+| `finance-gemini` | Finance Expert | Google | 💰 Finanças (ações, crypto, câmbio) | ✅ |
+| `knowledge-openai` | Knowledge Expert | OpenAI | 📚 Conhecimento (Wikipedia) | ✅ |
+| `knowledge-gemini` | Knowledge Expert | Google | 📚 Conhecimento (Wikipedia) | ✅ |
+| `websearch-openai` | Web Search Expert | OpenAI | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
+| `websearch-gemini` | Web Search Expert | Google | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
+
+### Agentes MCP (Model Context Protocol)
+
+| ID | Nome | Descrição | Requer API Key? |
+|----|------|-----------|:---------------:|
+| `mcp-demo` | MCP Demo | Demonstração do conceito MCP (sem conexão real) | ❌ |
+| `mcp-fetch` | MCP Fetch | Busca e extrai conteúdo de URLs da web | ❌ |
+| `mcp-filesystem` | MCP Filesystem | Lê e escreve arquivos no sistema local | ❌ |
+| `mcp-memory` | MCP Memory | Armazena e recupera informações na memória | ❌ |
+| `mcp-time` | MCP Time | Informações de data, hora e fuso horário | ❌ |
+| `mcp-sqlite` | MCP SQLite | Consultas em banco de dados SQLite | ❌ |
+| `mcp-brave_search` | MCP Brave Search | Busca na web via Brave Search API | ⚠️ `BRAVE_API_KEY` |
+| `mcp-github` | MCP GitHub | Acesso a repositórios e dados do GitHub | ⚠️ `GITHUB_TOKEN` |
 
 > 🦙 **Ollama**: Roda modelos localmente, sem API key, com total privacidade!
+>
+> ☁️ **Azure OpenAI**: Mesmos modelos GPT, com compliance empresarial, SLA e rede privada.
+>
+> 🔌 **MCP**: Agentes MCP reais requerem Node.js (npx) instalado. Os que exigem API key só aparecem se a chave estiver configurada.
 
 ---
 
