@@ -2,6 +2,7 @@
 streamlit>=1.30.0
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
 
 # LangChain e LLMs
 langchain>=0.3.0
@@ -10,6 +11,7 @@ langchain-community>=0.3.0
 langchain-google-genai>=2.0.0
 langchain-ollama>=0.3.0
 langchain-core>=0.3.0
+langchain-text-splitters>=0.3.0
 langgraph>=0.2.0
 python-dotenv>=1.0.0
 openai>=1.10.0
@@ -23,6 +25,8 @@ pandas>=2.0.0
 python-docx>=1.0.0
 
 # Tools e APIs externas
+requests>=2.31.0
+pytz>=2024.1
 ddgs>=7.0.0
 wikipedia>=1.4.0
 
