@@ -508,6 +508,13 @@ def initialize_session_state():
     if "current_model" not in st.session_state:
         st.session_state.current_model = None
 
+    # Rastreia system_prompt e guardrails atuais (para detectar mudanças)
+    if "current_system_prompt" not in st.session_state:
+        st.session_state.current_system_prompt = None
+
+    if "current_guardrails" not in st.session_state:
+        st.session_state.current_guardrails = None
+
     if "current_config" not in st.session_state:
         st.session_state.current_config = None
 
@@ -1425,10 +1432,14 @@ def main():
     # 1. Não existe agente ainda
     # 2. O tipo de agente mudou (ex: OpenAI -> Gemini)
     # 3. O modelo mudou (ex: gpt-4 -> gpt-4o)
+    # 4. O system prompt foi alterado
+    # 5. Os guardrails foram alterados
     need_new_agent = (
         st.session_state.agent is None or
         st.session_state.current_agent_name != config["agent_name"] or
-        st.session_state.current_model != config["model"]
+        st.session_state.current_model != config["model"] or
+        st.session_state.current_system_prompt != config["system_prompt"] or
+        st.session_state.current_guardrails != config["guardrails"]
     )
 
     if need_new_agent:
@@ -1454,7 +1465,9 @@ def main():
             if agent:
                 st.session_state.agent = agent
                 st.session_state.current_agent_name = config["agent_name"]
-                st.session_state.current_model = config["model"]  # Atualiza o modelo atual
+                st.session_state.current_model = config["model"]
+                st.session_state.current_system_prompt = config["system_prompt"]
+                st.session_state.current_guardrails = config["guardrails"]
                 # Salva a configuração no chat ativo
                 sync_active_chat(config)
                 st.toast(f"Agente {config['agent_name']} ({config['model']}) ativado!", icon="✅")
