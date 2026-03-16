@@ -94,6 +94,9 @@ def load_pdf_file(file_path: str = None, file_content: bytes = None,
     Cada página do PDF se torna um Document separado.
     Requer: pip install pypdf
 
+    Suporta PDFs malformados usando modo tolerante (strict=False).
+    Valores numéricos inválidos como '0.00-30' são tratados automaticamente.
+
     Args:
         file_path: Caminho para o arquivo
         file_content: Conteúdo do arquivo em bytes
@@ -109,6 +112,9 @@ def load_pdf_file(file_path: str = None, file_content: bytes = None,
             "pypdf não está instalado. Execute: pip install pypdf"
         )
 
+    import logging
+    import warnings
+
     if file_content is not None:
         pdf_file = io.BytesIO(file_content)
     elif file_path is not None:
@@ -117,23 +123,55 @@ def load_pdf_file(file_path: str = None, file_content: bytes = None,
     else:
         raise ValueError("Forneça file_path ou file_content")
 
-    reader = PdfReader(pdf_file)
+    # Tenta abrir o PDF em modo tolerante (strict=False)
+    # Isso resolve a maioria dos PDFs malformados com valores como '0.00-30'
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reader = PdfReader(pdf_file, strict=False)
+    except Exception as e:
+        raise ValueError(
+            f"❌ Não foi possível abrir o PDF '{filename}'.\n"
+            f"O arquivo pode estar corrompido ou protegido por senha.\n"
+            f"Erro: {str(e)}"
+        )
+
     documents = []
+    pages_with_errors = []
 
     for page_num, page in enumerate(reader.pages, 1):
-        text = page.extract_text()
-        if text.strip():  # Ignora páginas vazias
-            doc = Document(
-                page_content=text,
-                metadata={
-                    "source": file_path or filename,
-                    "filename": filename,
-                    "file_type": ".pdf",
-                    "page": page_num,
-                    "total_pages": len(reader.pages)
-                }
-            )
-            documents.append(doc)
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                text = page.extract_text() or ""
+            if text.strip():
+                doc = Document(
+                    page_content=text,
+                    metadata={
+                        "source": file_path or filename,
+                        "filename": filename,
+                        "file_type": ".pdf",
+                        "page": page_num,
+                        "total_pages": len(reader.pages)
+                    }
+                )
+                documents.append(doc)
+        except Exception as e:
+            pages_with_errors.append(page_num)
+            logging.warning(f"⚠️ PDF '{filename}': erro na página {page_num}: {e}")
+
+    if pages_with_errors:
+        logging.warning(
+            f"⚠️ PDF '{filename}': {len(pages_with_errors)} página(s) com erro "
+            f"foram ignoradas: {pages_with_errors}"
+        )
+
+    if not documents:
+        raise ValueError(
+            f"❌ Nenhum texto extraído de '{filename}'.\n"
+            f"O PDF pode conter apenas imagens (scanned) ou estar vazio.\n"
+            f"Dica: Use OCR (ex: Tesseract) para PDFs escaneados."
+        )
 
     return documents
 
