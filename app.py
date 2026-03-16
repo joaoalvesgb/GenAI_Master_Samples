@@ -1274,8 +1274,28 @@ def display_sidebar():
 
                         except ImportError as e:
                             st.error(f"❌ Biblioteca necessária não instalada: {str(e)}")
+                        except ValueError as e:
+                            st.error(f"❌ {str(e)}")
                         except Exception as e:
-                            st.error(f"❌ Erro ao processar: {str(e)}")
+                            error_msg = str(e)
+                            # Mensagens amigáveis para erros comuns
+                            if "Unsupported data type" in error_msg:
+                                st.error(
+                                    "❌ **Tipo de dado não suportado no documento.**\n\n"
+                                    "Possíveis causas:\n"
+                                    "- O arquivo contém dados que não são texto (imagens, tabelas complexas)\n"
+                                    "- Valores numéricos inválidos no PDF\n"
+                                    "- CSV com células vazias ou tipos mistos\n\n"
+                                    "💡 **Dica:** Tente converter o arquivo para `.txt` ou `.md` antes de enviar."
+                                )
+                            elif "could not convert string to float" in error_msg:
+                                st.error(
+                                    "❌ **PDF com valores numéricos malformados.**\n\n"
+                                    "O arquivo contém dados corrompidos. "
+                                    "Tente abrir no Adobe Reader, salvar como novo PDF e enviar novamente."
+                                )
+                            else:
+                                st.error(f"❌ Erro ao processar: {error_msg}")
                 else:
                     st.warning("Selecione pelo menos um arquivo.")
 
