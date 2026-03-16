@@ -44,13 +44,34 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List, AsyncGenerator
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, Header, Query
+from fastapi import FastAPI, HTTPException, Depends, Header, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 # Carrega variáveis de ambiente
 load_dotenv()
+
+# =============================================================================
+# IMPORTS DE KNOWLEDGE BASE (RAG)
+# =============================================================================
+
+try:
+    from knowledge_base import (
+        VectorStoreManager,
+        load_document,
+        split_documents,
+        SUPPORTED_FORMATS
+    )
+    RAG_AVAILABLE = True
+except ImportError:
+    RAG_AVAILABLE = False
+    VectorStoreManager = None
+    load_document = None
+    split_documents = None
+    SUPPORTED_FORMATS = {}
+    logger = logging.getLogger(__name__)
+    logger.warning("Módulos de RAG indisponíveis", exc_info=True)
 
 # =============================================================================
 # IMPORTS DE AGENTES (module-level com fallback gracioso)
@@ -113,6 +134,9 @@ class AgentRegistry:
     def __init__(self):
         self._agents: Dict[str, Dict[str, Any]] = {}
         self._sessions: Dict[str, Any] = {}
+        self._vector_store_manager = None  # Base de conhecimento compartilhada
+        self._rag_documents: List[str] = []  # Nomes dos documentos carregados
+        self._rag_storage_path: Optional[str] = None  # Caminho se salvo em disco
         self._discover_agents()
 
     def _discover_agents(self):
@@ -200,7 +224,7 @@ class AgentRegistry:
                 "models": ["gpt-4o-mini", "gpt-4o", "gpt-4"],
                 "default_model": "gpt-4o-mini",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "finance",
                 "extra_params": {"provider": "openai"}
             }
@@ -214,7 +238,7 @@ class AgentRegistry:
                 "models": ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro"],
                 "default_model": "gemini-2.0-flash",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "finance",
                 "extra_params": {"provider": "google"}
             }
@@ -229,7 +253,7 @@ class AgentRegistry:
                 "models": ["gpt-4o-mini", "gpt-4o", "gpt-4"],
                 "default_model": "gpt-4o-mini",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "knowledge",
                 "extra_params": {"provider": "openai"}
             }
@@ -243,7 +267,7 @@ class AgentRegistry:
                 "models": ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro"],
                 "default_model": "gemini-2.0-flash",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "knowledge",
                 "extra_params": {"provider": "google"}
             }
@@ -258,7 +282,7 @@ class AgentRegistry:
                 "models": ["gpt-4o-mini", "gpt-4o", "gpt-4"],
                 "default_model": "gpt-4o-mini",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "websearch",
                 "extra_params": {"provider": "openai"}
             }
@@ -272,7 +296,7 @@ class AgentRegistry:
                 "models": ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro"],
                 "default_model": "gemini-2.0-flash",
                 "has_tools": True,
-                "has_rag": False,
+                "has_rag": True,
                 "specialization": "websearch",
                 "extra_params": {"provider": "google"}
             }
@@ -330,6 +354,8 @@ class AgentRegistry:
     def list_agents(self) -> List[Dict[str, Any]]:
         """Lista todos os agentes disponíveis."""
         agents_list = []
+        kb_active = self._vector_store_manager is not None
+
         for agent_id, config in self._agents.items():
             # Verifica se a API key está configurada
             api_key_env = config.get("requires_api_key", "")
@@ -344,6 +370,7 @@ class AgentRegistry:
                 "default_model": config.get("default_model"),
                 "has_tools": config.get("has_tools", False),
                 "has_rag": config.get("has_rag", False),
+                "rag_active": kb_active and config.get("has_rag", False),
                 "specialization": config.get("specialization"),
                 "available": api_key_available
             })
@@ -397,7 +424,49 @@ class AgentRegistry:
         # Adiciona kwargs adicionais
         params.update(kwargs)
 
+        # Passa vector_store_manager para agentes que suportam RAG
+        # SimpleAgent não usa tools, MCP usa protocolo próprio
+        agent_class_name = agent_class.__name__
+        supports_rag = agent_class_name not in ("SimpleAgent", "MCPAgent", "MCPAgentDemo")
+        if supports_rag and self._vector_store_manager is not None:
+            params["vector_store_manager"] = self._vector_store_manager
+
         return agent_class(**params)
+
+    # =========================================================================
+    # GESTÃO DA BASE DE CONHECIMENTO (RAG)
+    # =========================================================================
+
+    def set_vector_store(self, manager, document_names: List[str] = None, storage_path: str = None):
+        """
+        Define o vector store compartilhado para todos os agentes.
+
+        Args:
+            manager: Instância de VectorStoreManager
+            document_names: Nomes dos documentos carregados
+            storage_path: Caminho em disco (se persistido)
+        """
+        self._vector_store_manager = manager
+        self._rag_documents = document_names or []
+        self._rag_storage_path = storage_path
+        logger.info(f"📚 Base de conhecimento configurada com {len(self._rag_documents)} documento(s)")
+
+    def clear_vector_store(self):
+        """Remove a base de conhecimento."""
+        self._vector_store_manager = None
+        self._rag_documents = []
+        self._rag_storage_path = None
+        logger.info("🗑️ Base de conhecimento removida")
+
+    def get_knowledge_base_status(self) -> Dict[str, Any]:
+        """Retorna o status da base de conhecimento."""
+        return {
+            "active": self._vector_store_manager is not None,
+            "documents": self._rag_documents,
+            "document_count": len(self._rag_documents),
+            "storage_path": self._rag_storage_path,
+            "storage_type": "disk" if self._rag_storage_path else ("memory" if self._vector_store_manager else None)
+        }
 
     def create_session(self, agent_id: str, **agent_params) -> str:
         """
@@ -514,6 +583,7 @@ class AgentInfo(BaseModel):
     default_model: str
     has_tools: bool
     has_rag: bool
+    rag_active: bool = False
     specialization: Optional[str]
     available: bool
 
@@ -564,6 +634,18 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 API iniciada!")
     print(f"📋 {len(agent_registry.list_agents())} agentes disponíveis")
+
+    # Auto-load: tenta carregar base de conhecimento do disco (se existir)
+    kb_path = os.getenv("KNOWLEDGE_BASE_PATH", "./knowledge_base_data")
+    if RAG_AVAILABLE and os.path.exists(kb_path):
+        try:
+            vm = VectorStoreManager()
+            vm.load(kb_path)
+            agent_registry.set_vector_store(vm, [f"Base carregada de: {kb_path}"], kb_path)
+            print(f"📚 Base de conhecimento carregada automaticamente de: {kb_path}")
+        except Exception as e:
+            print(f"⚠️ Não foi possível carregar base de conhecimento de {kb_path}: {e}")
+
     yield
     # Shutdown
     print("👋 API encerrada!")
@@ -589,6 +671,17 @@ Esta API permite integrar agentes de IA em suas aplicações.
 1. Liste os agentes disponíveis: `GET /agents`
 2. Crie uma sessão: `POST /sessions`
 3. Envie mensagens: `POST /chat/{session_id}`
+
+### Base de Conhecimento (RAG)
+
+Para usar a mesma base de conhecimento do Streamlit:
+1. No Streamlit, salve a base em disco (opção "💾 Disco")
+2. Na API, carregue com: `POST /knowledge-base/load?path=./knowledge_base_data`
+
+Ou faça upload direto pela API:
+1. Upload de documentos: `POST /knowledge-base/upload`
+2. Verifique o status: `GET /knowledge-base`
+3. Teste uma busca: `POST /knowledge-base/search?query=...`
 
 ### Autenticação
 
@@ -630,6 +723,10 @@ async def root():
             "chat_stream": "/chat/{session_id}/stream",
             "quick_chat": "/chat/quick/{agent_id}",
             "quick_chat_stream": "/chat/quick/{agent_id}/stream",
+            "knowledge_base": "/knowledge-base",
+            "knowledge_base_upload": "/knowledge-base/upload",
+            "knowledge_base_load": "/knowledge-base/load",
+            "knowledge_base_search": "/knowledge-base/search",
             "health": "/health",
             "demo": "/demo"
         },
@@ -676,10 +773,12 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "agents_available": len(agent_registry.list_agents()),
         "active_sessions": len(agent_registry.list_sessions()),
+        "knowledge_base": agent_registry.get_knowledge_base_status(),
         "features": {
             "streaming_sse": True,
             "sessions": True,
-            "quick_chat": True
+            "quick_chat": True,
+            "rag": RAG_AVAILABLE
         }
     }
 
@@ -1200,6 +1299,227 @@ async def test_stream():
 
 
 # ----- TOOLS INFO -----
+
+# =============================================================================
+# KNOWLEDGE BASE (RAG) ENDPOINTS
+# =============================================================================
+
+@app.get(
+    "/knowledge-base",
+    tags=["Knowledge Base"],
+    summary="Status da base de conhecimento"
+)
+async def knowledge_base_status(_: bool = Depends(verify_api_key)):
+    """
+    Retorna o status atual da base de conhecimento.
+
+    Mostra se há uma base carregada, quantos documentos,
+    e onde está armazenada.
+    """
+    status = agent_registry.get_knowledge_base_status()
+    status["rag_available"] = RAG_AVAILABLE
+    status["supported_formats"] = list(SUPPORTED_FORMATS.keys()) if RAG_AVAILABLE else []
+    return status
+
+
+@app.post(
+    "/knowledge-base/upload",
+    tags=["Knowledge Base"],
+    summary="Upload de documentos para a base de conhecimento"
+)
+async def upload_documents(
+        files: List[UploadFile] = File(..., description="Arquivos para indexar"),
+        chunk_size: int = Form(1000, description="Tamanho do chunk"),
+        chunk_overlap: int = Form(200, description="Sobreposição entre chunks"),
+        save_to_disk: bool = Form(False, description="Salvar base em disco"),
+        save_path: str = Form("./knowledge_base_data", description="Caminho para salvar em disco"),
+        _: bool = Depends(verify_api_key)
+):
+    """
+    Faz upload de documentos e cria/atualiza a base de conhecimento.
+
+    Formatos suportados: .txt, .md, .pdf, .csv, .docx, .json
+
+    Os documentos são:
+    1. Carregados e parseados
+    2. Divididos em chunks
+    3. Convertidos em embeddings
+    4. Indexados no vector store (FAISS)
+
+    Após o upload, todos os agentes com suporte a RAG passarão
+    a consultar esta base de conhecimento automaticamente.
+    """
+    if not RAG_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Módulos de RAG não disponíveis. Instale: pip install faiss-cpu langchain-community"
+        )
+
+    if not files:
+        raise HTTPException(status_code=400, detail="Nenhum arquivo enviado")
+
+    try:
+        all_documents = []
+        document_names = []
+
+        for uploaded_file in files:
+            content = await uploaded_file.read()
+            docs = load_document(
+                file_content=content,
+                filename=uploaded_file.filename
+            )
+            all_documents.extend(docs)
+            document_names.append(uploaded_file.filename)
+
+        # Divide em chunks
+        chunks = split_documents(
+            all_documents,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap
+        )
+
+        # Cria vector store
+        vector_manager = VectorStoreManager()
+        vector_manager.create_from_documents(chunks)
+
+        # Salva em disco se solicitado
+        storage_path = None
+        if save_to_disk:
+            vector_manager.save(save_path)
+            storage_path = save_path
+
+        # Configura no registry (todos os agentes passam a ter acesso)
+        agent_registry.set_vector_store(vector_manager, document_names, storage_path)
+
+        return {
+            "message": "Base de conhecimento criada com sucesso!",
+            "documents": document_names,
+            "document_count": len(document_names),
+            "chunks_created": len(chunks),
+            "chunk_size": chunk_size,
+            "chunk_overlap": chunk_overlap,
+            "saved_to_disk": save_to_disk,
+            "storage_path": storage_path
+        }
+
+    except ImportError as e:
+        raise HTTPException(status_code=501, detail=f"Biblioteca necessária não instalada: {str(e)}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar documentos: {str(e)}")
+
+
+@app.post(
+    "/knowledge-base/load",
+    tags=["Knowledge Base"],
+    summary="Carrega base de conhecimento salva em disco"
+)
+async def load_knowledge_base(
+        path: str = Query("./knowledge_base_data", description="Caminho da base salva"),
+        _: bool = Depends(verify_api_key)
+):
+    """
+    Carrega uma base de conhecimento previamente salva em disco.
+
+    Use este endpoint para carregar uma base que foi salva anteriormente
+    via Streamlit (opção "Disco") ou via o endpoint de upload com save_to_disk=true.
+
+    Isso permite compartilhar a mesma base de conhecimento entre
+    Streamlit e a API.
+    """
+    if not RAG_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Módulos de RAG não disponíveis."
+        )
+
+    if not os.path.exists(path):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Caminho não encontrado: {path}. Salve uma base de conhecimento primeiro."
+        )
+
+    try:
+        vector_manager = VectorStoreManager()
+        vector_manager.load(path)
+
+        agent_registry.set_vector_store(
+            vector_manager,
+            [f"Base carregada de: {path}"],
+            path
+        )
+
+        return {
+            "message": "Base de conhecimento carregada com sucesso!",
+            "path": path,
+            "active": True
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao carregar base: {str(e)}")
+
+
+@app.delete(
+    "/knowledge-base",
+    tags=["Knowledge Base"],
+    summary="Remove a base de conhecimento"
+)
+async def clear_knowledge_base(_: bool = Depends(verify_api_key)):
+    """
+    Remove a base de conhecimento da memória.
+
+    Os agentes voltarão a funcionar sem RAG.
+    Não apaga arquivos do disco.
+    """
+    agent_registry.clear_vector_store()
+    return {"message": "Base de conhecimento removida", "active": False}
+
+
+@app.post(
+    "/knowledge-base/search",
+    tags=["Knowledge Base"],
+    summary="Busca na base de conhecimento"
+)
+async def search_knowledge_base(
+        query: str = Query(..., description="Texto para buscar"),
+        k: int = Query(4, ge=1, le=20, description="Número de resultados"),
+        _: bool = Depends(verify_api_key)
+):
+    """
+    Busca documentos relevantes na base de conhecimento.
+
+    Útil para testar se a base está funcionando corretamente
+    antes de usar via agente.
+    """
+    if agent_registry._vector_store_manager is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Nenhuma base de conhecimento carregada. Faça upload de documentos primeiro."
+        )
+
+    try:
+        results = agent_registry._vector_store_manager.similarity_search(query, k=k)
+
+        formatted_results = []
+        for i, doc in enumerate(results, 1):
+            formatted_results.append({
+                "rank": i,
+                "content": doc.page_content,
+                "metadata": doc.metadata
+            })
+
+        return {
+            "query": query,
+            "results_count": len(formatted_results),
+            "results": formatted_results
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na busca: {str(e)}")
+
+
+# ----- TOOLS INFO (original) -----
 
 @app.get(
     "/tools",
