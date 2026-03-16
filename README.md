@@ -54,9 +54,10 @@ Este projeto foi desenvolvido para ensinar os conceitos fundamentais de **Agente
 ### 🤖 Agentes
 - ✅ **OpenAI** - GPT-4, GPT-4o, GPT-4o-mini
 - ✅ **Google Gemini** - Gemini 2.5 Flash, 2.0 Flash, 1.5 Pro
-- ✅ **Ollama (Local)** - Llama 3.2, Mistral, CodeLlama, Phi-3, etc. **(sem API key!)**
+- ✅ **Azure OpenAI** - Mesmos modelos GPT com compliance empresarial e SLA
+- ✅ **Ollama (Local)** - Llama 3.2, Mistral, CodeLlama, Phi-3, Gemma, etc. **(sem API key!)**
 - ✅ **Especializados** - Finance, Knowledge, Web Search
-- ✅ **MCP** - Conexão com servidores externos
+- ✅ **MCP** - Fetch, Filesystem, Memory, Time, SQLite, Brave Search, GitHub
 
 ### 🔧 Tools
 - ✅ Calculadora, Data/Hora, Busca Web
@@ -267,6 +268,7 @@ GenAI_Master_Samples/
 │   ├── simple_agent.py          # Agente simples (sem tools)
 │   ├── openai_agent.py          # Agente OpenAI completo
 │   ├── gemini_agent.py          # Agente Gemini completo
+│   ├── azure_agent.py           # ☁️ Agente Azure OpenAI
 │   ├── ollama_agent.py          # 🦙 Agente Ollama (local)
 │   ├── finance_agent.py         # 💰 Especialista em finanças
 │   ├── knowledge_agent.py       # 📚 Especialista em conhecimento
@@ -302,23 +304,46 @@ GenAI_Master_Samples/
 
 ## 🤖 Agentes Disponíveis
 
+### Agentes Base
+
+| ID | Nome | Provider | Especialização | Tools | RAG |
+|----|------|----------|----------------|:-----:|:---:|
+| `simple-openai` | Simple Agent | OpenAI | Geral (sem tools) | ❌ | ❌ |
+| `simple-gemini` | Simple Agent | Google | Geral (sem tools) | ❌ | ❌ |
+| `openai` | OpenAI Agent | OpenAI | Geral | ✅ | ✅ |
+| `gemini` | Gemini Agent | Google | Geral | ✅ | ✅ |
+| `azure` | Azure OpenAI Agent | Azure | Geral (compliance empresarial) | ✅ | ✅ |
+| `ollama` | **Ollama Agent** | **Local** | Geral **(sem API key!)** | ✅ | ✅ |
+
+### Agentes Especialistas
+
 | ID | Nome | Provider | Especialização | Tools |
-|----|------|----------|----------------|-------|
-| `simple-openai` | Simple Agent | OpenAI | Geral | ❌ |
-| `simple-gemini` | Simple Agent | Google | Geral | ❌ |
-| `openai` | OpenAI Agent | OpenAI | Geral | ✅ |
-| `gemini` | Gemini Agent | Google | Geral | ✅ |
-| `ollama` | **Ollama Agent** | **Local** | Geral | ✅ |
-| `finance-openai` | Finance Expert | OpenAI | 💰 Finanças | ✅ |
-| `finance-gemini` | Finance Expert | Google | 💰 Finanças | ✅ |
-| `knowledge-openai` | Knowledge Expert | OpenAI | 📚 Conhecimento | ✅ |
-| `knowledge-gemini` | Knowledge Expert | Google | 📚 Conhecimento | ✅ |
-| `websearch-openai` | Web Search Expert | OpenAI | 🔍 Pesquisa | ✅ |
-| `websearch-gemini` | Web Search Expert | Google | 🔍 Pesquisa | ✅ |
-| `mcp-fetch` | MCP Fetch | OpenAI | 🔌 URLs | MCP |
-| `mcp-time` | MCP Time | OpenAI | 🔌 Data/Hora | MCP |
+|----|------|----------|----------------|:-----:|
+| `finance-openai` | Finance Expert | OpenAI | 💰 Finanças (ações, crypto, câmbio) | ✅ |
+| `finance-gemini` | Finance Expert | Google | 💰 Finanças (ações, crypto, câmbio) | ✅ |
+| `knowledge-openai` | Knowledge Expert | OpenAI | 📚 Conhecimento (Wikipedia) | ✅ |
+| `knowledge-gemini` | Knowledge Expert | Google | 📚 Conhecimento (Wikipedia) | ✅ |
+| `websearch-openai` | Web Search Expert | OpenAI | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
+| `websearch-gemini` | Web Search Expert | Google | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
+
+### Agentes MCP (Model Context Protocol)
+
+| ID | Nome | Descrição | Requer API Key? |
+|----|------|-----------|:---------------:|
+| `mcp-demo` | MCP Demo | Demonstração do conceito MCP (sem conexão real) | ❌ |
+| `mcp-fetch` | MCP Fetch | Busca e extrai conteúdo de URLs da web | ❌ |
+| `mcp-filesystem` | MCP Filesystem | Lê e escreve arquivos no sistema local | ❌ |
+| `mcp-memory` | MCP Memory | Armazena e recupera informações na memória | ❌ |
+| `mcp-time` | MCP Time | Informações de data, hora e fuso horário | ❌ |
+| `mcp-sqlite` | MCP SQLite | Consultas em banco de dados SQLite | ❌ |
+| `mcp-brave_search` | MCP Brave Search | Busca na web via Brave Search API | ⚠️ `BRAVE_API_KEY` |
+| `mcp-github` | MCP GitHub | Acesso a repositórios e dados do GitHub | ⚠️ `GITHUB_TOKEN` |
 
 > 🦙 **Ollama**: Roda modelos localmente, sem API key, com total privacidade!
+>
+> ☁️ **Azure OpenAI**: Mesmos modelos GPT, com compliance empresarial, SLA e rede privada.
+>
+> 🔌 **MCP**: Agentes MCP reais requerem Node.js (npx) instalado. Os que exigem API key só aparecem se a chave estiver configurada.
 
 ---
 
