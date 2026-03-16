@@ -29,6 +29,7 @@ Provedores de Embeddings suportados:
 Configuração via variáveis de ambiente (.env):
 - EMBEDDING_PROVIDER: Provedor a usar (openai, azure, gemini, ollama, huggingface)
 - EMBEDDING_MODEL: Modelo específico do provedor escolhido
+- AZURE_OPENAI_EMBEDDING_ENDPOINT: URL específica para embeddings Azure (opcional)
 
 Prioridade de configuração:
 1. Parâmetro no código (provider=, model=)
@@ -252,7 +253,8 @@ class VectorStoreManager:
 
         Requer variáveis de ambiente:
         - AZURE_OPENAI_API_KEY: Chave de acesso
-        - AZURE_OPENAI_ENDPOINT: URL do recurso
+        - AZURE_OPENAI_ENDPOINT: URL do recurso (fallback)
+        - AZURE_OPENAI_EMBEDDING_ENDPOINT: URL específica para embeddings (opcional, prioritário)
         - AZURE_OPENAI_API_VERSION: Versão da API (opcional)
 
         O parâmetro 'model' aqui corresponde ao nome do DEPLOYMENT no Azure.
@@ -262,14 +264,20 @@ class VectorStoreManager:
         """
         from langchain_openai import AzureOpenAIEmbeddings
 
+        # Usa endpoint específico para embeddings, com fallback para o endpoint principal
+        azure_embedding_endpoint = (
+            os.getenv("AZURE_OPENAI_EMBEDDING_ENDPOINT")
+            or os.getenv("AZURE_OPENAI_ENDPOINT")
+        )
+
         self.embeddings = AzureOpenAIEmbeddings(
             azure_deployment=model or "text-embedding-3-small",
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            azure_endpoint=azure_embedding_endpoint,
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),
             api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"),
         )
         self.provider = "azure"
-        print(f"✅ Usando Azure OpenAI Embeddings (deployment: {model or 'text-embedding-3-small'})")
+        print(f"✅ Usando Azure OpenAI Embeddings (deployment: {model or 'text-embedding-3-small'}, endpoint: {azure_embedding_endpoint})")
 
     def _init_gemini_embeddings(self, model: Optional[str] = None):
         """
