@@ -22,6 +22,7 @@ Agentes disponíveis:
 - WebSearchAgent: Agente especialista em pesquisa web
 - MCPAgent: Agente que conecta a servidores MCP externos
 - MCPAgentDemo: Demonstração do conceito MCP (sem dependências)
+- SkillsAgent: Agente com Skills (habilidades avançadas) via Azure OpenAI
 
 Tipos de Memória:
 - ShortTermMemory: Memória de curto prazo (últimas N mensagens)
@@ -72,6 +73,7 @@ from .finance_agent import FinanceAgent
 from .knowledge_agent import KnowledgeAgent
 from .websearch_agent import WebSearchAgent
 from .mcp_agent import MCPAgentDemo
+from .skills_agent import SkillsAgent
 
 # Tenta importar MCPAgent completo (requer dependências extras)
 try:
@@ -99,6 +101,7 @@ __all__ = [
     "WebSearchAgent",
     "MCPAgent",
     "MCPAgentDemo",
+    "SkillsAgent",
     "ShortTermMemory",
     "LongTermMemory",
     "CombinedMemory",

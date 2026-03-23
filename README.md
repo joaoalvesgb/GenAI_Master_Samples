@@ -17,6 +17,7 @@
 - [🚀 Quick Start](#-quick-start)
 - [📁 Estrutura do Projeto](#-estrutura-do-projeto)
 - [🤖 Agentes Disponíveis](#-agentes-disponíveis)
+- [🧠 Skills (Habilidades)](#-skills-habilidades)
 - [🔧 Tools (Ferramentas)](#-tools-ferramentas)
 - [🌐 API REST](#-api-rest)
 - [🎮 Demo Interativo](#-demo-interativo)
@@ -37,6 +38,7 @@ Este projeto foi desenvolvido para ensinar os conceitos fundamentais de **Agente
 |----------|------------------------|
 | 🤖 **Agentes** | Programas que usam LLMs para "pensar" e agir autonomamente |
 | 🔧 **Tools** | Como permitir que o agente execute ações reais (cálculos, buscas, APIs) |
+| 🧠 **Skills** | Habilidades de alto nível que compõem múltiplas tools (pesquisa, resumo, criação) |
 | 📚 **RAG** | Como dar conhecimento específico ao agente com documentos |
 | 🧠 **Memória** | Como manter contexto entre conversas (curto e longo prazo) |
 | 🔌 **MCP** | Model Context Protocol para conectar a servidores externos |
@@ -110,9 +112,12 @@ Cada etapa constrói sobre a anterior — ao final, você terá domínio complet
 | 4.3 | Usar o **Web Search Agent** para pesquisas | `agents/websearch_agent.py` | Single-tool agent |
 | 4.4 | Comparar **system prompts** de cada especialista | `templates/prompts.py` | Prompt engineering por domínio |
 | 4.5 | Experimentar **RAG + Especialista** juntos | Sidebar → Upload + Agente | Combinação de capacidades |
-| 4.6 | Criar seu **próprio agente especialista** | Novo arquivo em `agents/` | Extensão do sistema |
+| 4.6 | Entender o conceito de **Skills vs Tools** | `skills/base_skill.py`, `skills/__init__.py` | Abstração de alto nível |
+| 4.7 | Usar o **Skills Agent** (pesquisa, resumo, criação) | `agents/skills_agent.py` | Skills compostas |
+| 4.8 | Estudar como uma **Skill compõe múltiplas Tools** | `skills/research_skill.py` | Composição, multi-etapa |
+| 4.9 | Criar sua **própria Skill** seguindo o padrão | `skills/` | Extensibilidade avançada |
 
-**✅ Ao final:** Você sabe criar agentes focados com tools, prompts e comportamentos especializados.
+**✅ Ao final:** Você sabe criar agentes focados com tools, prompts e Skills especializadas.
 
 ---
 
@@ -179,8 +184,8 @@ Fundamentos    →    Tools          →    RAG
 🔴 Nível 4          🟣 Nível 5          ⚫ Nível 6
 Especialistas  →    Memória        →    Infraestrutura
 • Finance Agent     • Curto prazo       • Ollama (local)
-• Knowledge Agent   • Longo prazo       • Azure OpenAI
-• Prompts           • Persistência      • API + Docker
+• Skills Agent      • Longo prazo       • Azure OpenAI
+• Skills vs Tools   • Persistência      • API + Docker
      │                   │                   │
      └───────────────────┼───────────────────┘
                          ▼
@@ -207,7 +212,13 @@ Especialistas  →    Memória        →    Infraestrutura
 - ✅ **Azure OpenAI** - Mesmos modelos GPT com compliance empresarial e SLA
 - ✅ **Ollama (Local)** - Llama 3.2, Mistral, CodeLlama, Phi-3, Gemma, etc. **(sem API key!)**
 - ✅ **Especializados** - Finance, Knowledge, Web Search
+- ✅ **Skills Agent** - Habilidades avançadas: Pesquisa, Resumo e Criação de Conteúdo (Azure OpenAI)
 - ✅ **MCP** - Fetch, Filesystem, Memory, Time, SQLite, Brave Search, GitHub
+
+### 🧠 Skills (Habilidades)
+- ✅ **Research Skill** - Pesquisa aprofundada (Web + Wikipedia + síntese)
+- ✅ **Summarize Skill** - Análise e resumo inteligente (executivo, pontos-chave, crítico)
+- ✅ **Content Creation Skill** - E-mails, relatórios e posts (LinkedIn, Twitter/X)
 
 ### 🔧 Tools
 - ✅ Calculadora, Data/Hora, Busca Web
@@ -423,7 +434,14 @@ GenAI_Master_Samples/
 │   ├── finance_agent.py         # 💰 Especialista em finanças
 │   ├── knowledge_agent.py       # 📚 Especialista em conhecimento
 │   ├── websearch_agent.py       # 🔍 Especialista em pesquisa
-│   └── mcp_agent.py             # 🔌 Agente MCP
+│   ├── mcp_agent.py             # 🔌 Agente MCP
+│   └── skills_agent.py          # 🧠 Agente com Skills (Azure OpenAI)
+│
+├── 📁 skills/                   # 🧠 SKILLS (HABILIDADES)
+│   ├── base_skill.py            # Classe base abstrata para Skills
+│   ├── research_skill.py        # 🔍 Pesquisa aprofundada (web + wiki)
+│   ├── summarize_skill.py       # 📋 Resumo inteligente de textos
+│   └── content_skill.py         # ✉️ Criação de conteúdo (e-mail, relatório, post)
 │
 ├── 📁 tools/                    # 🔧 FERRAMENTAS
 │   ├── calculator.py            # Calculadora matemática
@@ -475,6 +493,7 @@ GenAI_Master_Samples/
 | `knowledge-gemini` | Knowledge Expert | Google | 📚 Conhecimento (Wikipedia) | ✅ |
 | `websearch-openai` | Web Search Expert | OpenAI | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
 | `websearch-gemini` | Web Search Expert | Google | 🔍 Pesquisa Web (DuckDuckGo) | ✅ |
+| `skills-azure` | **Skills Agent** | **Azure** | 🧠 **Skills: Pesquisa + Resumo + Criação** | ✅ |
 
 ### Agentes MCP (Model Context Protocol)
 
@@ -494,6 +513,89 @@ GenAI_Master_Samples/
 > ☁️ **Azure OpenAI**: Mesmos modelos GPT, com compliance empresarial, SLA e rede privada.
 >
 > 🔌 **MCP**: Agentes MCP reais requerem Node.js (npx) instalado. Os que exigem API key só aparecem se a chave estiver configurada.
+
+---
+
+## 🧠 Skills (Habilidades)
+
+### O que são Skills?
+
+**Skills** são uma abstração de **nível superior às Tools**. Enquanto uma Tool executa uma ação atômica, uma Skill encapsula uma **capacidade completa** que pode compor múltiplas tools internamente.
+
+```
+┌─────────────┬───────────────────────────┬──────────────────────────────────┐
+│             │ Tool                      │ Skill                            │
+├─────────────┼───────────────────────────┼──────────────────────────────────┤
+│ Escopo      │ Ação única e atômica      │ Capacidade completa e composta   │
+│ Complexidade│ Simples (1 função)        │ Complexa (multi-etapa)           │
+│ Composição  │ Independente              │ Pode usar múltiplas Tools        │
+│ Exemplo     │ web_search("clima SP")    │ research("impacto climático SP") │
+└─────────────┴───────────────────────────┴──────────────────────────────────┘
+```
+
+**Analogia do mundo real:**
+- 🔨 **Tool** = Martelo, Serra, Chave de Fenda (ferramentas individuais)
+- 🧠 **Skill** = Carpintaria, Encanamento (habilidades que usam várias ferramentas)
+
+### Arquitetura de Skills
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        AGENTE (SkillsAgent)                     │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    SKILLS (Alto Nível)                   │    │
+│  │                                                         │    │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐│    │
+│  │  │ 🔍 Research  │ │ 📋 Summarize │ │ ✉️ Content       ││    │
+│  │  │              │ │              │ │    Creation      ││    │
+│  │  │ ┌──────────┐ │ │ ┌──────────┐ │ │ ┌──────────────┐ ││    │
+│  │  │ │web_search│ │ │ │calculator│ │ │ │datetime_tool │ ││    │
+│  │  │ │wikipedia │ │ │ │  regex   │ │ │ │  templates   │ ││    │
+│  │  │ └──────────┘ │ │ └──────────┘ │ │ └──────────────┘ ││    │
+│  │  └──────────────┘ └──────────────┘ └──────────────────┘│    │
+│  │                     TOOLS (Baixo Nível)                 │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  LLM: Azure OpenAI (GPT-4o)  │  Framework: LangGraph (ReAct)   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Skills Disponíveis
+
+| Skill | Descrição | Tools Internas | Exemplo de Uso |
+|-------|-----------|----------------|----------------|
+| 🔍 `research_skill` | Pesquisa aprofundada com múltiplas fontes | `web_search`, `wikipedia` | "Pesquise sobre energia solar" |
+| 📋 `summarize_skill` | Análise e resumo inteligente com métricas | `calculator`, `regex` | "Resuma este texto: ..." |
+| ✉️ `content_creation_skill` | Criação de conteúdo profissional formatado | `datetime`, `templates` | "Escreva um e-mail sobre a reunião" |
+
+### Detalhamento das Skills
+
+#### 🔍 Research Skill
+Combina busca web + Wikipedia e sintetiza em um relatório estruturado.
+- **Profundidades:** `rapida` (só web), `normal` (web + wiki), `profunda` (web + wiki + detalhes)
+- **Saída:** Relatório formatado com seções e fontes citadas
+
+#### 📋 Summarize Skill
+Analisa texto com métricas (palavras, complexidade) e gera resumos estruturados.
+- **Estilos:** `executivo` (formal conciso), `pontos_chave` (bullet points), `analise_critica` (prós/contras)
+- **Saída:** Resumo formatado com métricas e destaques
+
+#### ✉️ Content Creation Skill
+Gera conteúdo profissional usando templates especializados.
+- **Tipos:** `email` (profissional), `report` (relatório), `social_post` (LinkedIn + Twitter/X)
+- **Tons:** `formal`, `profissional`, `casual`, `entusiasmado`
+- **Saída:** Conteúdo formatado pronto para uso
+
+### Padrões de Projeto nas Skills
+
+| Padrão | Onde é Usado | Benefício |
+|--------|-------------|-----------|
+| **Template Method** | `BaseSkill` (execute → validate → format) | Estrutura consistente |
+| **Strategy** | `SummarizeSkill` (estilos de resumo) | Comportamentos intercambiáveis |
+| **Factory** | `ContentCreationSkill` (tipos de conteúdo) | Criação flexível |
+| **Composição** | Todas as Skills (compõem Tools) | Reutilização e modularidade |
+| **Open/Closed** | `SkillsAgent.add_skill()` | Extensível sem modificar |
 
 ---
 
@@ -699,6 +801,39 @@ def calculator(expression: str) -> str:
 # "Olá, tudo bem?"    → Não usa (responde direto)
 ```
 
+### 🧠 O que são Skills?
+
+**Skills** são capacidades de **alto nível** que vão além de Tools simples:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                          SKILL                              │
+├─────────────────────────────────────────────────────────────┤
+│  1. RECEBE  → Tarefa complexa do agente                    │
+│  2. COMPÕE  → Usa múltiplas tools internamente             │
+│  3. PROCESSA→ Lógica multi-etapa (pipeline)                │
+│  4. ENTREGA → Resultado estruturado e completo             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+```python
+# Uma Skill COMPÕE múltiplas tools:
+class ResearchSkill(BaseSkill):
+    def execute(self, topic: str) -> str:
+        # Etapa 1: Busca na web
+        web_results = web_search(topic)
+        # Etapa 2: Busca na Wikipedia
+        wiki_results = wikipedia(topic)
+        # Etapa 3: Sintetiza tudo
+        report = synthesize(web_results, wiki_results)
+        return report
+
+# O LLM decide qual SKILL usar:
+# "Pesquise sobre IA"        → Usa research_skill
+# "Resuma este texto: ..."   → Usa summarize_skill
+# "Escreva um e-mail"        → Usa content_creation_skill
+```
+
 ### 📚 O que é RAG?
 
 **RAG** (Retrieval Augmented Generation) dá conhecimento específico ao LLM:
@@ -768,6 +903,43 @@ def minha_tool(query: str) -> str:
     # Sua lógica aqui
     resultado = fazer_algo(query)
     return resultado
+```
+
+### Criando uma Nova Skill
+
+```python
+# skills/minha_skill.py
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
+from skills.base_skill import BaseSkill
+
+class MinhaSkillInput(BaseModel):
+    topic: str = Field(description="O tópico a processar")
+    depth: str = Field(default="normal", description="Profundidade")
+
+class MinhaSkill(BaseSkill):
+    def __init__(self):
+        super().__init__(
+            name="minha_skill",
+            description="Faz algo incrível com múltiplas etapas",
+            required_tools=["web_search", "calculator"]
+        )
+
+    def execute(self, topic: str, depth: str = "normal") -> str:
+        # Etapa 1: Coleta dados
+        dados = self._coletar(topic)
+        # Etapa 2: Processa
+        resultado = self._processar(dados, depth)
+        # Etapa 3: Formata
+        return self._formatar(resultado)
+
+# Exporta como LangChain Tool
+_skill = MinhaSkill()
+
+@tool("minha_skill", args_schema=MinhaSkillInput)
+def minha_skill_tool(topic: str, depth: str = "normal") -> str:
+    """Descrição da skill para o LLM."""
+    return _skill.execute(topic=topic, depth=depth)
 ```
 
 ### Registrando no Sistema
@@ -878,6 +1050,11 @@ docker-compose up -d --build --force-recreate
 OPENAI_API_KEY=sk-sua-chave-aqui
 GOOGLE_API_KEY=sua-chave-aqui
 
+# === Azure OpenAI (para Skills Agent e Azure Agent) ===
+AZURE_OPENAI_API_KEY=sua-chave-azure-aqui
+AZURE_OPENAI_ENDPOINT=https://seu-recurso.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-08-01-preview
+
 # === APIs de Tools (opcionais) ===
 ALPHA_VANTAGE_API_KEY=sua-chave  # Para ações/forex
 
@@ -895,6 +1072,7 @@ API_AUTH_KEY=sua-chave-secreta
 |-----|-----|-------|
 | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | Pago |
 | Google AI | [aistudio.google.com](https://aistudio.google.com/apikey) | Gratuito |
+| Azure OpenAI | [portal.azure.com](https://portal.azure.com) | Pago (Azure) |
 | Alpha Vantage | [alphavantage.co](https://www.alphavantage.co/support/#api-key) | Gratuito |
 
 ---
@@ -931,7 +1109,32 @@ response = agent.process_message("Qual o preço do Bitcoin?")
 print(response)  # Usa a API CoinGecko
 ```
 
-### Exemplo 4: Usando a API
+### Exemplo 4: Agente com Skills (Azure OpenAI)
+
+```python
+from agents import SkillsAgent
+
+# Cria o agente com Skills (requer AZURE_OPENAI_API_KEY e AZURE_OPENAI_ENDPOINT)
+agent = SkillsAgent()
+
+# Research Skill: pesquisa aprofundada com múltiplas fontes
+response = agent.process_message("Pesquise sobre inteligência artificial generativa")
+print(response)  # Relatório com dados da web + Wikipedia
+
+# Summarize Skill: resume textos com métricas
+response = agent.process_message("Resuma este texto: A IA está revolucionando...")
+print(response)  # Resumo estruturado com pontos-chave
+
+# Content Creation Skill: cria conteúdo profissional
+response = agent.process_message("Escreva um e-mail formal sobre a reunião de projeto")
+print(response)  # E-mail formatado com template profissional
+
+# Verificar skills e tools disponíveis
+print(agent.list_skills())  # ['research_skill', 'summarize_skill', 'content_creation_skill']
+print(agent.list_tools())   # Skills + calculator + datetime
+```
+
+### Exemplo 5: Usando a API
 
 ```python
 import requests

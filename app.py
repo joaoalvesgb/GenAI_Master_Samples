@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 import os
 
 # Importa os agentes disponíveis
-from agents import OpenAIAgent, GeminiAgent, AzureAgent, OllamaAgent, SimpleAgent, FinanceAgent, KnowledgeAgent, WebSearchAgent, MCPAgentDemo, MEMORY_TYPES
+from agents import OpenAIAgent, GeminiAgent, AzureAgent, OllamaAgent, SimpleAgent, FinanceAgent, KnowledgeAgent, WebSearchAgent, MCPAgentDemo, SkillsAgent, MEMORY_TYPES
 
 # Tenta importar MCPAgent real (requer dependências extras)
 try:
@@ -101,6 +101,17 @@ AVAILABLE_AGENTS = {
         "models": ["inic1537_gpt-4o_dev", "gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
         "extra_params": ["presence_penalty", "frequency_penalty"],
         "is_azure": True
+    },
+    "🧠 Skills (Azure OpenAI)": {
+        "class": SkillsAgent,
+        "description": "Agente com Skills (habilidades avançadas) - pesquisa, resumo e criação de conteúdo",
+        "api_key_env": "AZURE_OPENAI_API_KEY",
+        "api_key_url": "https://portal.azure.com",
+        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
+        "extra_params": ["presence_penalty", "frequency_penalty"],
+        "is_azure": True,
+        "is_specialist": True,
+        "template_type": "skills"
     },
     "🦙 Ollama (Local)": {
         "class": OllamaAgent,

@@ -118,6 +118,12 @@ except ImportError:
     MCP_SERVERS = {}
     logger.warning("Erro ao importar MCP agents", exc_info=True)
 
+try:
+    from agents import SkillsAgent
+except ImportError:
+    SkillsAgent = None
+    logger.warning("Erro ao importar SkillsAgent", exc_info=True)
+
 
 # =============================================================================
 # REGISTRO DINÂMICO DE AGENTES
@@ -211,6 +217,26 @@ class AgentRegistry:
                 "default_model": "gpt-4o",
                 "has_tools": True,
                 "has_rag": True
+            }
+
+        # Skills Agent (Azure OpenAI) - usa Skills de alto nível
+        if SkillsAgent is not None:
+            self._agents["skills-azure"] = {
+                "class": SkillsAgent,
+                "name": "Skills Agent (Azure OpenAI)",
+                "description": "Agente com Skills avançadas: pesquisa aprofundada, resumo inteligente e criação de conteúdo profissional",
+                "provider": "azure",
+                "requires_api_key": "AZURE_OPENAI_API_KEY",
+                "models": ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-35-turbo"],
+                "default_model": "gpt-4o",
+                "has_tools": True,
+                "has_rag": True,
+                "specialization": "skills",
+                "skills": [
+                    "research_skill - Pesquisa aprofundada (web + Wikipedia)",
+                    "summarize_skill - Análise e resumo inteligente de textos",
+                    "content_creation_skill - Criação de e-mails, relatórios e posts"
+                ]
             }
 
         # Agentes especialistas
@@ -372,6 +398,7 @@ class AgentRegistry:
                 "has_rag": config.get("has_rag", False),
                 "rag_active": kb_active and config.get("has_rag", False),
                 "specialization": config.get("specialization"),
+                "skills": config.get("skills", []),
                 "available": api_key_available
             })
 
