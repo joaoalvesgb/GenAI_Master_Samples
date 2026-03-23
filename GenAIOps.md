@@ -21,17 +21,17 @@ Aplicações modernas de GenAI não são mais simples chamadas a uma API de LLM.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  Aplicação GenAI                     │
+│                  Aplicação GenAI                    │
 │                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
-│  │  Agentes  │  │   RAG    │  │  Multi-Modelo    │  │
-│  │ Autônomos │  │ Pipeline │  │  (Text+Img+Code) │  │
-│  └────┬─────┘  └────┬─────┘  └────────┬─────────┘  │
-│       │              │                  │            │
+│  ┌──────────┐  ┌───────────┐  ┌───────────────────┐ │
+│  │  Agentes │  │    RAG    │  │   Multi-Modelo    │ │
+│  │ Autônomos│  │  Pipeline │  │   (Text+Img+Code) │ │
+│  └────┬─────┘  └─────┬─────┘  └─────────┬─────────┘ │
+│       │              │                  │           │
 │  ┌────▼──────────────▼──────────────────▼─────────┐ │
 │  │           Orquestração & Roteamento            │ │
 │  └────────────────────┬───────────────────────────┘ │
-│                       │                              │
+│                       │                             │
 │  ┌────────────────────▼───────────────────────────┐ │
 │  │    Guardrails | Observabilidade | Governança   │ │
 │  └────────────────────────────────────────────────┘ │
@@ -297,23 +297,23 @@ class ModelRouter:
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                   CI/CD Pipeline                      │
-│                                                       │
-│  1. Code Change (prompts, tools, configs)             │
-│       │                                               │
-│  2. Unit Tests (ferramentas, parsing)                 │
-│       │                                               │
-│  3. Integration Tests (chains, agents)                │
-│       │                                               │
-│  4. Evaluation Suite (qualidade, segurança)           │
-│       │                                               │
-│  5. Cost Estimation (custo projetado)                 │
-│       │                                               │
-│  6. Canary Deploy (5% do tráfego)                     │
-│       │                                               │
-│  7. Monitoramento (métricas em tempo real)            │
-│       │                                               │
-│  8. Rollout Completo ou Rollback Automático           │
+│                   CI/CD Pipeline                     │
+│                                                      │
+│  1. Code Change (prompts, tools, configs)            │
+│       │                                              │
+│  2. Unit Tests (ferramentas, parsing)                │
+│       │                                              │
+│  3. Integration Tests (chains, agents)               │
+│       │                                              │
+│  4. Evaluation Suite (qualidade, segurança)          │
+│       │                                              │
+│  5. Cost Estimation (custo projetado)                │
+│       │                                              │
+│  6. Canary Deploy (5% do tráfego)                    │
+│       │                                              │
+│  7. Monitoramento (métricas em tempo real)           │
+│       │                                              │
+│  8. Rollout Completo ou Rollback Automático          │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -375,25 +375,25 @@ class ModelRouter:
 ## 📊 Dashboard de métricas recomendado
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║                   GenAIOps Dashboard                      ║
-╠══════════════════════════════════════════════════════════╣
-║                                                           ║
-║  📈 Performance          💰 Custos           🛡️ Segurança ║
-║  ─────────────          ────────            ─────────── ║
-║  Latência p50: 450ms    Hoje: $127.50       Blocked: 12  ║
-║  Latência p99: 2.1s     Mês: $2,340         PII Det: 45  ║
-║  Throughput: 150 rps    Projeção: $3,100    Inject: 3    ║
-║  Error Rate: 0.3%       Cache savings: 35%  Toxic: 7     ║
-║                                                           ║
-║  📊 Qualidade            🤖 Agentes          📦 Modelos   ║
-║  ─────────────          ────────            ─────────── ║
-║  Faithfulness: 0.94     Execuções: 1,240    GPT-4o: 60%  ║
-║  Relevancy: 0.91        Avg Steps: 4.2      Mini: 35%    ║
-║  Hallucination: 0.03    Timeout: 2.1%       Claude: 5%   ║
-║  User Rating: 4.2/5     Avg Cost: $0.15     Cache: 35%   ║
-║                                                           ║
-╚══════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║                   GenAIOps Dashboard                       ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  📈 Performance          💰 Custos           🛡️ Segurança  ║
+║  ─────────────          ────────            ─────────────  ║
+║  Latência p50: 450ms    Hoje: $127.50       Blocked: 12    ║
+║  Latência p99: 2.1s     Mês: $2,340         PII Det: 45    ║
+║  Throughput: 150 rps    Projeção: $3,100    Inject: 3      ║
+║  Error Rate: 0.3%       Cache savings: 35%  Toxic: 7       ║
+║                                                            ║
+║  📊 Qualidade            🤖 Agentes          📦 Modelos    ║
+║  ─────────────          ────────            ─────────────  ║
+║  Faithfulness: 0.94     Execuções: 1,240    GPT-4o: 60%    ║
+║  Relevancy: 0.91        Avg Steps: 4.2      Mini: 35%      ║
+║  Hallucination: 0.03    Timeout: 2.1%       Claude: 5%     ║
+║  User Rating: 4.2/5     Avg Cost: $0.15     Cache: 35%     ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
 ---

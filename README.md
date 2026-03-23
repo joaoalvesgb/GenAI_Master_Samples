@@ -540,25 +540,25 @@ GenAI_Master_Samples/
 ### Arquitetura de Skills
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        AGENTE (SkillsAgent)                     │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                    SKILLS (Alto Nível)                   │    │
-│  │                                                         │    │
-│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐│    │
-│  │  │ 🔍 Research  │ │ 📋 Summarize │ │ ✉️ Content       ││    │
-│  │  │              │ │              │ │    Creation      ││    │
-│  │  │ ┌──────────┐ │ │ ┌──────────┐ │ │ ┌──────────────┐ ││    │
-│  │  │ │web_search│ │ │ │calculator│ │ │ │datetime_tool │ ││    │
-│  │  │ │wikipedia │ │ │ │  regex   │ │ │ │  templates   │ ││    │
-│  │  │ └──────────┘ │ │ └──────────┘ │ │ └──────────────┘ ││    │
-│  │  └──────────────┘ └──────────────┘ └──────────────────┘│    │
-│  │                     TOOLS (Baixo Nível)                 │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  LLM: Azure OpenAI (GPT-4o)  │  Framework: LangGraph (ReAct)   │
-└──────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                        AGENTE (SkillsAgent)                   │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │                    SKILLS (Alto Nível)                  │  │
+│  │                                                         │  │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐ │  │
+│  │  │ 🔍 Research  │ │ 📋 Summarize │ │ ✉️ Content       │ │  │
+│  │  │              │ │              │ │    Creation      │ │  │
+│  │  │ ┌──────────┐ │ │ ┌──────────┐ │ │ ┌──────────────┐ │ │  │
+│  │  │ │web_search│ │ │ │calculator│ │ │ │datetime_tool │ │ │  │
+│  │  │ │wikipedia │ │ │ │  regex   │ │ │ │  templates   │ │ │  │
+│  │  │ └──────────┘ │ │ └──────────┘ │ │ └──────────────┘ │ │  │
+│  │  └──────────────┘ └──────────────┘ └──────────────────┘ │  │
+│  │                     TOOLS (Baixo Nível)                 │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  LLM: Azure OpenAI (GPT-4o)  │  Framework: LangGraph (ReAct)  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ### Skills Disponíveis
@@ -779,10 +779,10 @@ Um **Agente de IA** é um programa que:
 ┌─────────────────────────────────────────────────────────┐
 │                      AGENTE DE IA                       │
 ├─────────────────────────────────────────────────────────┤
-│  1. ENTENDE → Analisa a mensagem do usuário            │
-│  2. DECIDE  → Escolhe qual ação tomar                  │
-│  3. EXECUTA → Usa tools, RAG ou responde diretamente   │
-│  4. FORMULA → Gera resposta baseada no resultado       │
+│  1. ENTENDE → Analisa a mensagem do usuário             │
+│  2. DECIDE  → Escolhe qual ação tomar                   │
+│  3. EXECUTA → Usa tools, RAG ou responde diretamente    │
+│  4. FORMULA → Gera resposta baseada no resultado        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -809,10 +809,10 @@ def calculator(expression: str) -> str:
 ┌─────────────────────────────────────────────────────────────┐
 │                          SKILL                              │
 ├─────────────────────────────────────────────────────────────┤
-│  1. RECEBE  → Tarefa complexa do agente                    │
-│  2. COMPÕE  → Usa múltiplas tools internamente             │
-│  3. PROCESSA→ Lógica multi-etapa (pipeline)                │
-│  4. ENTREGA → Resultado estruturado e completo             │
+│  1. RECEBE  → Tarefa complexa do agente                     │
+│  2. COMPÕE  → Usa múltiplas tools internamente              │
+│  3. PROCESSA→ Lógica multi-etapa (pipeline)                 │
+│  4. ENTREGA → Resultado estruturado e completo              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
